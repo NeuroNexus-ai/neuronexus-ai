@@ -68,7 +68,7 @@ app = FastAPI(
     lifespan=lifespan,
     version=settings.VERSION,
     docs_url="/docs",
-    redoc_url=None,
+    redoc_url="/redoc",
     swagger_ui_parameters={
         "defaultModelsExpandDepth": (1 if settings.DOCS_SHOW_SCHEMAS else -1),  # -1 إخفاء
         "defaultModelExpandDepth": 0,

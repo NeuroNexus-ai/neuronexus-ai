@@ -14,50 +14,51 @@ from typing import Optional
 
 ROOT = Path(__file__).resolve().parent
 
+
+# =========================
+# OS / Venv helpers
+# =========================
 def is_windows() -> bool:
-    """Check if the operating system is Windows."""
     return os.name == "nt"
 
+
 def venv_python(venv_dir: Path) -> Path:
-    """Return the path to the Python executable in the virtual environment.
-
-    Args:
-        venv_dir (Path): Path to the virtual environment directory.
-
-    Returns:
-        Path: Full path to the Python executable.
-    """
     return venv_dir / ("Scripts/python.exe" if is_windows() else "bin/python")
 
-def wait_for_health(url: str, timeout_s: int = 60, interval_s: float = 1.5) -> None:
-    """Wait for a service to become healthy by polling its health check URL.
 
-    Args:
-        url (str): The health check URL.
-        timeout_s (int): Timeout in seconds.
-        interval_s (float): Polling interval in seconds.
+# =========================
+# Healthcheck
+# =========================
+def _probe_url(url: str, timeout: float = 4.0) -> bool:
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as r:
+            return r.status == 200
+    except Exception:
+        return False
 
-    Raises:
-        RuntimeError: If health check fails within the timeout.
+
+def wait_for_any_healthy(urls: list[str], timeout_s: int = 90, interval_s: float = 1.25) -> str:
+    """
+    Poll a list of URLs until any returns HTTP 200.
+    Returns the first healthy URL, or raises RuntimeError on timeout.
     """
     start = time.time()
-    last_err: Optional[Exception] = None
+    last_errors: dict[str, str] = {}
     while time.time() - start < timeout_s:
-        try:
-            with urllib.request.urlopen(url, timeout=3) as r:
-                if r.status == 200:
-                    return
-        except Exception as e:
-            last_err = e
+        for url in urls:
+            if _probe_url(url):
+                return url
+            else:
+                last_errors[url] = "no 200"
         time.sleep(interval_s)
-    raise RuntimeError(f"Healthcheck timed out: {url} (last error: {last_err})")
+    errors = ", ".join(f"{u}: {e}" for u, e in last_errors.items()) or "no response"
+    raise RuntimeError(f"Healthcheck timed out after {timeout_s}s → {errors}")
 
+
+# =========================
+# Utilities
+# =========================
 def get_local_ip() -> str:
-    """Get the local IPv4 address (LAN). Defaults to 127.0.0.1 on failure.
-
-    Returns:
-        str: The local IP address.
-    """
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         s.connect(("8.8.8.8", 80))
@@ -68,56 +69,54 @@ def get_local_ip() -> str:
         s.close()
     return ip
 
+
+def inherit_env(extra: dict[str, str] | None = None) -> dict[str, str]:
+    env = os.environ.copy()
+    env.setdefault("PYTHONUNBUFFERED", "1")  # flush logs immediately
+    if extra:
+        env.update(extra)
+    return env
+
+
+# =========================
+# API: FastAPI / Uvicorn
+# =========================
 def start_api() -> subprocess.Popen:
-    """Start the FastAPI service using Uvicorn in a subprocess.
-
-    Returns:
-        subprocess.Popen: The process running the FastAPI server.
-
-    Raises:
-        FileNotFoundError: If the Python executable in the virtual environment is not found.
-    """
     fastapi_dir = ROOT / "fastapi"
     py = venv_python(fastapi_dir / ".venv")
     if not py.exists():
         raise FileNotFoundError(f"FastAPI venv python not found: {py}")
 
+    use_reload = os.environ.get("RUN_ALL_RELOAD", "0").lower() in ("1", "true", "yes")
+
     cmd = [
-        str(py),
-        "-m", "uvicorn",
+        str(py), "-m", "uvicorn",
         "app.main:app",
         "--host", "0.0.0.0",
         "--port", "8000",
-        "--reload",
+        "--log-level", "debug",
     ]
+    if use_reload:
+        cmd.append("--reload")
 
     print(f"[api] Starting: {' '.join(cmd)} (cwd={fastapi_dir})")
-    proc = subprocess.Popen(cmd, cwd=str(fastapi_dir))
+    proc = subprocess.Popen(cmd, cwd=str(fastapi_dir), env=inherit_env())
 
-    urls_to_check = [
+    candidates = [
         "http://127.0.0.1:8000/health",
         "http://localhost:8000/health",
+        "http://127.0.0.1:8000/docs",  # fallback if /health fails
     ]
-
-    for url in urls_to_check:
-        try:
-            print(f"[api] Waiting for health @ {url}")
-            wait_for_health(url, timeout_s=30)
-            print(f"[api] Healthy @ {url}")
-        except Exception as e:
-            print(f"[api] Health check failed for {url} → {e}")
-
+    print(f"[api] Waiting for health @ any of: {', '.join(candidates)} (timeout 90s)")
+    healthy_url = wait_for_any_healthy(candidates, timeout_s=90)
+    print(f"[api] Healthy @ {healthy_url}")
     return proc
 
+
+# =========================
+# UI: Streamlit
+# =========================
 def start_streamlit() -> subprocess.Popen:
-    """Start the Streamlit UI service in a subprocess.
-
-    Returns:
-        subprocess.Popen: The process running the Streamlit server.
-
-    Raises:
-        FileNotFoundError: If the Python executable in the virtual environment is not found.
-    """
     ui_dir = ROOT / "streamlit"
     py = venv_python(ui_dir / ".venv")
     if not py.exists():
@@ -129,16 +128,15 @@ def start_streamlit() -> subprocess.Popen:
         "--server.port", "8501",
     ]
     print(f"[ui] Starting: {' '.join(cmd)} (cwd={ui_dir})")
-    proc = subprocess.Popen(cmd, cwd=str(ui_dir))
+    proc = subprocess.Popen(cmd, cwd=str(ui_dir), env=inherit_env())
 
     loopback_url = "http://127.0.0.1:8501"
-    print(f"[ui] Waiting for health @ {loopback_url}")
-    wait_for_health(loopback_url, timeout_s=60)
+    print(f"[ui] Waiting for health @ {loopback_url} (timeout 90s)")
+    _ = wait_for_any_healthy([loopback_url], timeout_s=90, interval_s=1.0)
     print(f"[ui] Healthy @ {loopback_url}")
 
     local_ip = get_local_ip()
     local_ip_url = f"http://{local_ip}:8501"
-
     print(f"[ui] Access from this machine: {loopback_url}")
     print(f"[ui] Access from other devices on LAN: {local_ip_url}")
 
@@ -149,12 +147,11 @@ def start_streamlit() -> subprocess.Popen:
 
     return proc
 
-def terminate(proc: Optional[subprocess.Popen]) -> None:
-    """Terminate the given subprocess gracefully.
 
-    Args:
-        proc (Optional[subprocess.Popen]): The process to terminate.
-    """
+# =========================
+# Graceful Termination
+# =========================
+def terminate(proc: Optional[subprocess.Popen]) -> None:
     if not proc:
         return
     try:
@@ -163,14 +160,17 @@ def terminate(proc: Optional[subprocess.Popen]) -> None:
         else:
             proc.send_signal(signal.SIGINT)
         try:
-            proc.wait(timeout=5)
+            proc.wait(timeout=6)
         except subprocess.TimeoutExpired:
             proc.kill()
     except Exception:
         pass
 
+
+# =========================
+# Main
+# =========================
 def main() -> None:
-    """Main function to start and monitor both API and UI services."""
     api_proc = ui_proc = None
     try:
         api_proc = start_api()
@@ -188,9 +188,12 @@ def main() -> None:
             time.sleep(0.5)
     except KeyboardInterrupt:
         print("\nCTRL+C received, shutting down...")
+    except Exception as e:
+        print(f"\n[run_all] Fatal error: {e}", file=sys.stderr)
     finally:
         terminate(ui_proc)
         terminate(api_proc)
+
 
 if __name__ == "__main__":
     main()

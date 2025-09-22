@@ -142,7 +142,7 @@ UI customization via:
 
 ## 🖼️ Screenshots
 <p align="center">
-  <img src="docs/images/Screenshot.png" alt="Dashboard Plugins" width="800">
+  <img src="docs/images/NeuroNexus-ai.gif" alt="Dashboard Plugins" width="800">
 </p>
 
 ---
