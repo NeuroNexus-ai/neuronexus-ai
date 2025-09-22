@@ -10,7 +10,7 @@
 [![macOS CI](https://github.com/TamerOnLine/repo-fastapi/actions/workflows/ci-macos.yml/badge.svg)](https://github.com/TamerOnLine/repo-fastapi/actions/workflows/ci-macos.yml)
 [![GPU CI](https://github.com/TamerOnLine/repo-fastapi/actions/workflows/ci-gpu.yml/badge.svg)](https://github.com/TamerOnLine/repo-fastapi/actions/workflows/ci-gpu.yml)  
 ![License](https://img.shields.io/badge/License-MIT-green)
-[![Sponsor](https://img.shields.io/badge/Sponsor-💖-pink)](https://paypal.me/tameronline)
+
 
 ---
 
