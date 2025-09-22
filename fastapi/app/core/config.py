@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     # ================================
     # Basic service configuration
     # ================================
-    APP_NAME: str = "NeuroServe"
+    APP_NAME: str = "NeuroNexus-ai"
     VERSION: str = "0.1.0"
     ENV: str = Field("development", description="development | staging | production")
     HOST: str = "0.0.0.0"

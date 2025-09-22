@@ -14,7 +14,7 @@ import streamlit as st
 # =========================
 # Page & Paths
 # =========================
-st.set_page_config(page_title="NeuroServe Dashboard", page_icon="🚀", layout="wide")
+st.set_page_config(page_title="NeuroNexus-ai", page_icon="🚀", layout="wide")
 
 APP_DIR = Path(__file__).parent
 STREAMLIT_DIR = APP_DIR / ".streamlit"
@@ -385,7 +385,7 @@ def safe_json_input(
 # =========================
 # Main UI
 # =========================
-st.title("NeuroServe Dashboard (Multi-Server)")
+st.title("NeuroNexus-ai Dashboard (Multi-Server)")
 st.caption(
     "Professional interface for managing multiple FastAPI servers: "
     "Add/Edit/Delete · Independent Tokens · Request Broadcasting"

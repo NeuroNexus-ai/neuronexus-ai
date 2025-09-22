@@ -1,4 +1,4 @@
-# 🚀 NeuroServe Dashboard (Multi-Server Orchestrator)
+# 🚀 NeuroNexus-ai Dashboard (Multi-Server Orchestrator)
 
 ![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.116.x-009688?logo=fastapi&logoColor=white)
