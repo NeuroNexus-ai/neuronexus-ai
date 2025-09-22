@@ -1,4 +1,4 @@
-# 🚀 NeuroNexus-ai Dashboard (Multi-Server Orchestrator)
+# 🚀 NeuroNexus-ai Dashboard  
 
 ![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.116.x-009688?logo=fastapi&logoColor=white)
@@ -15,22 +15,24 @@
 ---
 
 ## 📖 Overview
-**NeuroServe Dashboard** is a flexible framework to manage and run **multiple FastAPI servers** through a **Streamlit dashboard**, orchestrated by a central script `run_all.py`.  
-It supports:
-- Running multiple services with **health checks** before continuing to the next.
-- Server management (add/delete/test connectivity/store tokens).
-- **Broadcast requests** to send the same request to all servers at once.
-- **Plugins & Workflows system** for easy extensibility.
+**NeuroNexus-ai Dashboard** is a **multi-server orchestrator** for managing and running **multiple FastAPI services** through a unified **Streamlit interface**.  
+
+It provides:
+- 🔄 Orchestration with health checks and graceful startup/shutdown.
+- ⚙️ Server management (add, delete, test connectivity, and store tokens).
+- 📢 Broadcast requests to multiple servers at once.
+- 🔌 Extensible **Plugins & Workflows** system.
+- 🎨 Customizable **UI Theme** with CSS.
+- 🛡️ Demo JWT authentication.
 
 ---
 
 ## ✨ Features
-- 🔄 **Orchestration**: Run API + UI with one command.
-- 📊 **Streamlit Dashboard** with a professional interface.
-- 🔌 **FastAPI Plugins & Workflows** ready to extend.
-- 🧠 **Unified Inference API** for simplified calls.
-- 🎨 **Custom CSS Theme** (neuroserve.css).
-- 🛡️ **JWT Authentication (demo)**.
+- Orchestrate **FastAPI + Streamlit** with one command.
+- Manage multiple services easily via sidebar.
+- Unified **Inference API** for plugin tasks.
+- Plugins & workflows for modular extensibility.
+- Professional dashboard interface with custom CSS.
 
 ---
 
@@ -100,22 +102,22 @@ Example `servers.json`:
 ---
 
 ## 🖥️ Streamlit Dashboard
-- **Sidebar**: Manage servers (add/edit/delete/test).  
-- **Tabs**:
+- Sidebar for managing servers.  
+- Tabs:
   - 🔑 Auth (`/auth/login`, `/auth/me`)
   - 📂 Uploads (`/uploads`)
   - 🔌 Plugins (`/plugins/{name}/{task}`)
   - 🧠 Inference (`/inference`)
   - 🔗 Workflows (`/workflows/run`)
   - ❤️ Health & Info (`/`, `/docs`, `/redoc`)
-  - 📢 Broadcast (send request to all servers)
+  - 📢 Broadcast (send requests to all servers)
 
 ---
 
 ## ⚙️ FastAPI Server
 - Core endpoints: `/health`, `/env`, `/plugins`, `/workflows`.
-- Routers: **Auth, Uploads, Plugins, Inference, Services, Workflows**.
-- Includes **CORS, Logging, Unified Responses**.
+- Routers: Auth, Uploads, Plugins, Inference, Services, Workflows.
+- Includes CORS, logging, and unified responses.
 
 ---
 
@@ -148,7 +150,7 @@ UI customization via:
 ## 🏭 Deployment Notes
 - Run Uvicorn behind a reverse proxy (e.g., Nginx).  
 - Use environment variables `APP_*` instead of hardcoded values.  
-- Docker setup is planned in the roadmap.  
+- Docker setup planned in the roadmap.  
 
 ---
 
