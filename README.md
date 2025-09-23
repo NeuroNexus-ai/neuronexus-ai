@@ -27,6 +27,15 @@ It provides:
 
 ---
 
+## 🎥 Demo
+
+<p align="center">
+  <img src="docs/video/NeuroNexus-ai.gif" alt="Dashboard Demo" width="800">
+</p>
+
+
+---
+
 ## ✨ Features
 - Orchestrate **FastAPI + Streamlit** with one command.
 - Manage multiple services easily via sidebar.

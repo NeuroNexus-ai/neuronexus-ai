@@ -1,198 +1,341 @@
 #!/usr/bin/env python3
+"""
+Main service runner script for NeuroNexus-AI.
+
+This script starts and monitors both the FastAPI backend and Streamlit frontend,
+ensuring they are up and accessible via local and LAN URLs.
+"""
+
 from __future__ import annotations
 
 import os
-import signal
-import socket
-import subprocess
 import sys
 import time
-import urllib.request
+import socket
+import signal
+import subprocess
+import threading
 import webbrowser
 from pathlib import Path
 from typing import Optional
+from urllib.request import urlopen, Request
 
+# Constants
+PROJECT_NAME = "NeuroNexus-AI"
+BANNER = r"""
+ _   _                          _   _                     
+| \ | | ___ _ __ _   _ _ __ ___| \ | | _____  __ ___  ___ 
+|  \| |/ _ \ '__| | | | '__/ _ \  \| |/ _ \ \/ / _ \/ __|
+| |\  |  __/ |  | |_| | | |  __/ |\  |  __/>  <  __/\__ \
+|_| \_|\___|_|   \__,_|_|  \___|_| \_|\___/_/\_\___||___/
+                  NeuroNexus-ai
+"""
 ROOT = Path(__file__).resolve().parent
 
 
-# =========================
-# OS / Venv helpers
-# =========================
-def is_windows() -> bool:
-    return os.name == "nt"
+class C:
+    """ANSI color codes for terminal output."""
+    RESET = "\033[0m"
+    DIM = "\033[2m"
+    BOLD = "\033[1m"
+    GRAY = "\033[90m"
+    RED = "\033[91m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    BLUE = "\033[94m"
+    MAGENTA = "\033[95m"
+    CYAN = "\033[96m"
+    WHITE = "\033[97m"
 
 
-def venv_python(venv_dir: Path) -> Path:
-    return venv_dir / ("Scripts/python.exe" if is_windows() else "bin/python")
-
-
-# =========================
-# Healthcheck
-# =========================
-def _probe_url(url: str, timeout: float = 4.0) -> bool:
-    try:
-        with urllib.request.urlopen(url, timeout=timeout) as r:
-            return r.status == 200
-    except Exception:
-        return False
-
-
-def wait_for_any_healthy(urls: list[str], timeout_s: int = 90, interval_s: float = 1.25) -> str:
-    """
-    Poll a list of URLs until any returns HTTP 200.
-    Returns the first healthy URL, or raises RuntimeError on timeout.
-    """
-    start = time.time()
-    last_errors: dict[str, str] = {}
-    while time.time() - start < timeout_s:
-        for url in urls:
-            if _probe_url(url):
-                return url
-            else:
-                last_errors[url] = "no 200"
-        time.sleep(interval_s)
-    errors = ", ".join(f"{u}: {e}" for u, e in last_errors.items()) or "no response"
-    raise RuntimeError(f"Healthcheck timed out after {timeout_s}s → {errors}")
-
-
-# =========================
-# Utilities
-# =========================
-def get_local_ip() -> str:
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-    except Exception:
-        ip = "127.0.0.1"
-    finally:
-        s.close()
-    return ip
-
-
-def inherit_env(extra: dict[str, str] | None = None) -> dict[str, str]:
-    env = os.environ.copy()
-    env.setdefault("PYTHONUNBUFFERED", "1")  # flush logs immediately
-    if extra:
-        env.update(extra)
-    return env
-
-
-# =========================
-# API: FastAPI / Uvicorn
-# =========================
-def start_api() -> subprocess.Popen:
-    fastapi_dir = ROOT / "fastapi"
-    py = venv_python(fastapi_dir / ".venv")
-    if not py.exists():
-        raise FileNotFoundError(f"FastAPI venv python not found: {py}")
-
-    use_reload = os.environ.get("RUN_ALL_RELOAD", "0").lower() in ("1", "true", "yes")
-
-    cmd = [
-        str(py), "-m", "uvicorn",
-        "app.main:app",
-        "--host", "0.0.0.0",
-        "--port", "8000",
-        "--log-level", "debug",
-    ]
-    if use_reload:
-        cmd.append("--reload")
-
-    print(f"[api] Starting: {' '.join(cmd)} (cwd={fastapi_dir})")
-    proc = subprocess.Popen(cmd, cwd=str(fastapi_dir), env=inherit_env())
-
-    candidates = [
-        "http://127.0.0.1:8000/health",
-        "http://localhost:8000/health",
-        "http://127.0.0.1:8000/docs",  # fallback if /health fails
-    ]
-    print(f"[api] Waiting for health @ any of: {', '.join(candidates)} (timeout 90s)")
-    healthy_url = wait_for_any_healthy(candidates, timeout_s=90)
-    print(f"[api] Healthy @ {healthy_url}")
-    return proc
-
-
-# =========================
-# UI: Streamlit
-# =========================
-def start_streamlit() -> subprocess.Popen:
-    ui_dir = ROOT / "streamlit"
-    py = venv_python(ui_dir / ".venv")
-    if not py.exists():
-        raise FileNotFoundError(f"Streamlit venv python not found: {py}")
-
-    cmd = [
-        str(py), "-m", "streamlit", "run", "app.py",
-        "--server.address", "0.0.0.0",
-        "--server.port", "8501",
-    ]
-    print(f"[ui] Starting: {' '.join(cmd)} (cwd={ui_dir})")
-    proc = subprocess.Popen(cmd, cwd=str(ui_dir), env=inherit_env())
-
-    loopback_url = "http://127.0.0.1:8501"
-    print(f"[ui] Waiting for health @ {loopback_url} (timeout 90s)")
-    _ = wait_for_any_healthy([loopback_url], timeout_s=90, interval_s=1.0)
-    print(f"[ui] Healthy @ {loopback_url}")
-
-    local_ip = get_local_ip()
-    local_ip_url = f"http://{local_ip}:8501"
-    print(f"[ui] Access from this machine: {loopback_url}")
-    print(f"[ui] Access from other devices on LAN: {local_ip_url}")
-
-    try:
-        webbrowser.open(local_ip_url)
-    except Exception:
-        webbrowser.open(loopback_url)
-
-    return proc
-
-
-# =========================
-# Graceful Termination
-# =========================
-def terminate(proc: Optional[subprocess.Popen]) -> None:
-    if not proc:
+def _enable_ansi_windows():
+    """Enable ANSI colors on Windows terminals if possible."""
+    if os.name != "nt":
         return
     try:
-        if is_windows():
-            proc.terminate()
-        else:
-            proc.send_signal(signal.SIGINT)
-        try:
-            proc.wait(timeout=6)
-        except subprocess.TimeoutExpired:
-            proc.kill()
+        import msvcrt  # noqa: F401
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.GetStdHandle(-11)
+        mode = ctypes.c_uint32()
+        if kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+            ENABLE_VTP = 0x0004
+            kernel32.SetConsoleMode(handle, mode.value | ENABLE_VTP)
     except Exception:
         pass
 
 
-# =========================
-# Main
-# =========================
-def main() -> None:
-    api_proc = ui_proc = None
+_enable_ansi_windows()
+
+API = {
+    "name": "FastAPI",
+    "workdir": ROOT / "fastapi",
+    "cmd": [
+        str((ROOT / "fastapi" / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python"))),
+        "-m", "uvicorn", "app.main:app",
+        "--host", "0.0.0.0", "--port", "8000", "--log-level", "debug"
+    ],
+    "health_urls": [
+        "http://127.0.0.1:8000/health",
+        "http://localhost:8000/health",
+        "http://127.0.0.1:8000/docs",
+    ],
+    "open_url": "http://127.0.0.1:8000/docs",
+    "tag": "api",
+    "color": C.CYAN,
+}
+
+UI = {
+    "name": "Streamlit",
+    "workdir": ROOT / "streamlit",
+    "cmd": [
+        str((ROOT / "streamlit" / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python"))),
+        "-m", "streamlit", "run", "app.py",
+        "--server.address", "0.0.0.0", "--server.port", "8501"
+    ],
+    "health_urls": [
+        "http://127.0.0.1:8501/healthz",
+        "http://127.0.0.1:8501",
+    ],
+    "open_url": "http://127.0.0.1:8501",
+    "tag": "ui",
+    "color": C.MAGENTA,
+}
+
+SERVICES = [API, UI]
+HEALTH_TIMEOUT = 90
+HEALTH_INTERVAL = 1.5
+
+
+def _print_banner():
+    """Print a welcome banner and project name."""
+    print(f"{C.GREEN}🚀 Welcome, Tamer! PowerShell is ready with curl 8.15.0{C.RESET}\n")
+    print(BANNER)
+    print(f"{C.BOLD}👉 Project:{C.RESET} {PROJECT_NAME}")
+    print("—" * 72)
+
+
+def _lan_ip() -> str:
+    """Retrieve LAN IP address."""
     try:
-        api_proc = start_api()
-        ui_proc = start_streamlit()
-        print("All services are up. Press CTRL+C to exit.")
-        while True:
-            code_api = api_proc.poll()
-            code_ui = ui_proc.poll()
-            if code_api is not None:
-                print(f"[api] Exited with code {code_api}")
-                break
-            if code_ui is not None:
-                print(f"[ui] Exited with code {code_ui}")
-                break
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0.2)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+
+def _wait_for_health(urls: list[str], timeout_s: int, interval_s: float) -> tuple[str, float]:
+    """Check service health from a list of URLs within a timeout period."""
+    start = time.perf_counter()
+    last_err: Optional[Exception] = None
+    while (time.perf_counter() - start) < timeout_s:
+        for u in urls:
+            try:
+                req = Request(u, headers={"User-Agent": "curl/8.15"})
+                with urlopen(req, timeout=3) as r:
+                    if 200 <= r.status < 500:
+                        return u, (time.perf_counter() - start)
+            except Exception as e:
+                last_err = e
+        time.sleep(interval_s)
+    raise RuntimeError(f"Healthcheck timed out. Last error: {last_err}")
+
+
+def _stream_output(proc: subprocess.Popen, tag: str, color: str):
+    """Stream output from a subprocess with tagging and color."""
+    prefix = f"{color}[{tag}]{C.RESET}"
+
+    def _pump(stream, is_err=False):
+        for line in iter(stream.readline, ""):
+            text = line.rstrip()
+            if not text:
+                continue
+            if is_err:
+                print(f"{prefix} {C.YELLOW}(err){C.RESET} {text}")
+            else:
+                print(f"{prefix} {text}")
+
+    if proc.stdout:
+        threading.Thread(target=_pump, args=(proc.stdout, False), daemon=True).start()
+    if proc.stderr:
+        threading.Thread(target=_pump, args=(proc.stderr, True), daemon=True).start()
+
+
+def _start_service(svc: dict) -> tuple[subprocess.Popen, str, float]:
+    """Start a service subprocess and wait until it becomes healthy."""
+    color = svc.get("color", C.WHITE)
+    cmd_pretty = " ".join(map(str, svc["cmd"]))
+    print(f"{color}[{svc['tag']}] Starting:{C.RESET} {cmd_pretty} {C.DIM}(cwd={svc['workdir']}){C.RESET}")
+    proc = subprocess.Popen(
+        svc["cmd"],
+        cwd=str(svc["workdir"]),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        bufsize=1,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0,
+    )
+    _stream_output(proc, svc["tag"], color)
+    print(f"{color}[{svc['tag']}] Waiting for health @{C.RESET} any of: {', '.join(svc['health_urls'])} {C.DIM}(timeout {HEALTH_TIMEOUT}s){C.RESET}")
+    healthy_url, elapsed = _wait_for_health(svc["health_urls"], HEALTH_TIMEOUT, HEALTH_INTERVAL)
+    print(f"{color}[{svc['tag']}] {C.GREEN}Healthy{C.RESET} @ {healthy_url} {C.DIM}({elapsed:.1f}s){C.RESET}")
+    return proc, healthy_url, elapsed
+
+
+def _open_browser(url: str):
+    """Open the default web browser at the given URL."""
+    try:
+        webbrowser.open(url, new=2)
+    except Exception:
+        pass
+
+
+def _services_table(rows: list[tuple[str, str, str, str]]) -> str:
+    """Format and return a table summarizing service URLs."""
+    headers = ("Service", "Port", "Local URL", "LAN URL")
+    cols = list(zip(*([headers] + rows)))
+    widths = [max(len(str(x)) for x in col) for col in cols]
+
+    def fmt_row(items):
+        return "│ " + " │ ".join(f"{str(v):<{w}}" for v, w in zip(items, widths)) + " │"
+
+    top = "┌" + "─" * (sum(widths) + 3 * (len(widths) - 1) + 2 * len(widths)) + "┐"
+    sep = "├" + "─" * (sum(widths) + 3 * (len(widths) - 1) + 2 * len(widths)) + "┤"
+    bot = "└" + "─" * (sum(widths) + 3 * (len(widths) - 1) + 2 * len(widths)) + "┘"
+
+    lines = [top, fmt_row(headers), sep]
+    for r in rows:
+        lines.append(fmt_row(r))
+    lines.append(bot)
+    return "\n".join(lines)
+
+
+def _graceful_terminate(procs: list[subprocess.Popen]):
+    """Terminate all running service subprocesses gracefully."""
+    print(f"{C.YELLOW}🛑 Stopping services...{C.RESET}")
+    for p in procs:
+        if p.poll() is None:
+            try:
+                if os.name == "nt":
+                    os.kill(p.pid, signal.CTRL_BREAK_EVENT)
+                else:
+                    p.terminate()
+            except Exception:
+                pass
+    t0 = time.time()
+    while any(p.poll() is None for p in procs) and time.time() - t0 < 8:
+        time.sleep(0.2)
+    for p in procs:
+        if p.poll() is None:
+            try:
+                p.kill()
+            except Exception:
+                pass
+
+
+def main():
+    """Start API and UI services and manage their lifecycle.
+
+    Orchestrates startup of the FastAPI backend and the Streamlit UI, updates
+    UI command flags to run headless and advertise the LAN address, opens a
+    browser to the LAN URL once, prints an access table and boot times, and
+    keeps the process alive until any child exits or the user interrupts with
+    CTRL+C.
+
+    Returns:
+        None: This function is a top-level entry point and has no return value.
+
+    Notes:
+        - Relies on global configuration dictionaries ``API`` and ``UI`` and
+          color helper ``C``.
+        - Uses helper functions: ``_print_banner()``, ``_lan_ip()``,
+          ``_start_service()``, ``_open_browser()``, ``_services_table()``,
+          ``_graceful_terminate()``.
+        - Does not modify service logic; only coordinates process lifecycle.
+    """
+    _print_banner()
+
+    procs: list[subprocess.Popen] = []
+    timings: dict[str, float] = {}
+
+    # 1) Compute LAN IP and apply it to UI settings before starting it.
+    lan = _lan_ip()
+    UI["open_url"] = f"http://{lan}:8501"
+
+    # Prevent Streamlit from opening the browser itself; advertise LAN instead
+    # of 0.0.0.0.
+    if "--server.headless" not in UI["cmd"]:
+        UI["cmd"] += [
+            "--server.headless",
+            "true",
+            "--browser.serverAddress",
+            lan,
+        ]
+
+    try:
+        # 2) Start API first.
+        api_proc, _, t_api = _start_service(API)
+        procs.append(api_proc)
+        timings["FastAPI"] = t_api
+
+        # 3) Start UI after adjusting its command arguments.
+        ui_proc, _, t_ui = _start_service(UI)
+        procs.append(ui_proc)
+        timings["Streamlit"] = t_ui
+
+        # 4) Open the browser once to the LAN URL.
+        _open_browser(UI["open_url"])
+
+        # 5) Print an access table.
+        rows = [
+            (
+                "FastAPI",
+                "8000",
+                "http://127.0.0.1:8000/docs",
+                f"http://{lan}:8000/docs",
+            ),
+            (
+                "Streamlit",
+                "8501",
+                "http://127.0.0.1:8501",
+                UI["open_url"],
+            ),
+        ]
+        print("\n" + _services_table(rows) + "\n")
+        print(
+            f"{C.DIM}Boot times:{C.RESET}  FastAPI "
+            f"{C.GREEN}{timings['FastAPI']:.1f}s{C.RESET}, "
+            f"Streamlit {C.GREEN}{timings['Streamlit']:.1f}s{C.RESET}"
+        )
+        print(
+            f"\n{C.GREEN}All services are up.{C.RESET} "
+            f"Press {C.BOLD}CTRL+C{C.RESET} to exit."
+        )
+        print(
+            "   • Access from this machine: "
+            f"{C.BLUE}http://127.0.0.1:8501{C.RESET}"
+        )
+        print(
+            "   • Access from other devices on LAN: "
+            f"{C.BLUE}{UI['open_url']}{C.RESET}"
+        )
+
+        while all(p.poll() is None for p in procs):
             time.sleep(0.5)
+
     except KeyboardInterrupt:
-        print("\nCTRL+C received, shutting down...")
-    except Exception as e:
-        print(f"\n[run_all] Fatal error: {e}", file=sys.stderr)
+        pass
+    except Exception as e:  # noqa: BLE001 - bubble up message to stderr
+        print(f"{C.RED}Startup failed:{C.RESET} {e}", file=sys.stderr)
     finally:
-        terminate(ui_proc)
-        terminate(api_proc)
+        _graceful_terminate(procs)
+        print("Bye.")
 
 
 if __name__ == "__main__":
