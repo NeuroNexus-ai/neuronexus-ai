@@ -9,27 +9,31 @@ from typing import Any
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 # ------------------------------------------------------------------------------
 # .env (optional) — load early so we respect any user-provided overrides
 # ------------------------------------------------------------------------------
 try:
     from dotenv import load_dotenv
-
     load_dotenv()
 except Exception:
     pass
 
 # ------------------------------------------------------------------------------
-# Project-local default caches (safe fallbacks) — created immediately.
-# These ensure downloads always stay inside the project if the user did not set
-# HF_HOME / TORCH_HOME in the environment.
+# Anchor roots (independent of CWD)
+# API_ROOT points to .../fastapi, PROJECT_ROOT to .../neuronexus-ai
 # ------------------------------------------------------------------------------
-ROOT = Path(__file__).resolve().parents[2]  # <project_root>/
-os.environ.setdefault("HF_HOME", str(ROOT / "models_cache" / "huggingface"))
-os.environ.setdefault("TORCH_HOME", str(ROOT / "models_cache" / "torch"))
-(Path(os.environ["HF_HOME"]).resolve()).mkdir(parents=True, exist_ok=True)
-(Path(os.environ["TORCH_HOME"]).resolve()).mkdir(parents=True, exist_ok=True)
+API_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = API_ROOT.parent
+
+# ------------------------------------------------------------------------------
+# Provide early, safe defaults for HF/Torch caches (can still be overridden by env)
+# This keeps model downloads inside the repo unless the user sets APP_MODEL_CACHE_ROOT
+# ------------------------------------------------------------------------------
+DEFAULT_MODELS_CACHE = os.getenv("APP_MODEL_CACHE_ROOT", str(API_ROOT / "models_cache"))
+os.environ.setdefault("HF_HOME", str(Path(DEFAULT_MODELS_CACHE) / "huggingface"))
+os.environ.setdefault("TORCH_HOME", str(Path(DEFAULT_MODELS_CACHE) / "torch"))
+Path(os.environ["HF_HOME"]).resolve().mkdir(parents=True, exist_ok=True)
+Path(os.environ["TORCH_HOME"]).resolve().mkdir(parents=True, exist_ok=True)
 # Quieter on Windows when symlinks are not available
 os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
@@ -40,36 +44,38 @@ class Settings(BaseSettings):
 
     - Reads from environment with prefix 'APP_' (e.g., APP_HOST, APP_PORT)
     - Also reads a .env file at project root (if present).
-    - Ensures HF/Torch caches are *inside the project* by default.
+    - All paths are anchored to API_ROOT/PROJECT_ROOT, not CWD.
     """
 
     # ================================
     # Basic service configuration
     # ================================
-    APP_NAME: str = "NeuroNexus-ai" # Application name
-    VERSION: str = "0.1.0" # Application version
-    ENV: str = Field("development", description="development | staging | production") # Environment
-    HOST: str = "0.0.0.0" # Host to bind
-    PORT: int = 8000 # Port to bind
-    RELOAD: bool = True # whether to enable auto-reload (dev only)
-    EXPOSE_ENV_ENDPOINT: bool = False  # whether to enable /env endpoint
-    ENV_SECRET_TOKEN: str | None = None  # optional token to protect /env in
+    APP_NAME: str = "NeuroNexus-ai"
+    VERSION: str = "0.2.0"
+    ENV: str = Field("development", description="development | staging | production")
+    HOST: str = "0.0.0.0"
+    PORT: int = 8000
+    RELOAD: bool = True  # enable auto-reload (dev only)
+
+    # /env endpoint exposure in production (optional)
+    EXPOSE_ENV_ENDPOINT: bool = False
+    ENV_SECRET_TOKEN: str | None = None  # optional token to protect /env
 
     # ================================
     # Logging configuration
     # ================================
-    LOG_LEVEL: str = "info"  # root/console level
-    LOG_LEVEL_UVICORN: str = "warning"  # uvicorn.access
-    LOG_LEVEL_PLUGINS: str = "info"  # plugins file
+    LOG_LEVEL: str = "info"                   # root console level
+    LOG_LEVEL_UVICORN: str = "warning"        # uvicorn.access
+    LOG_LEVEL_PLUGINS: str = "info"           # plugins file
     LOG_CONSOLE_FORMAT: str = "%(asctime)s %(levelname)s [%(name)s] %(message)s"
 
     LOG_ERRORS_TO_FILE: bool = True
-    ERROR_LOG_FILE: Path = Path("logs/errors.log")
+    ERROR_LOG_FILE: Path = API_ROOT / "logs" / "errors.log"
     ERROR_LOG_MAX_BYTES: int = 1_048_576  # 1 MB
     ERROR_LOG_BACKUPS: int = 5
 
     LOG_PLUGINS_TO_FILE: bool = True
-    PLUGINS_LOG_FILE: Path = Path("logs/plugins.log")
+    PLUGINS_LOG_FILE: Path = API_ROOT / "logs" / "plugins.log"
     DOCS_SHOW_SCHEMAS: bool = False
 
     # ================================
@@ -79,26 +85,26 @@ class Settings(BaseSettings):
         default="cuda:0",
         description="e.g., 'cuda:0', 'cpu', 'mps' (macOS), 'cuda:1', etc.",
     )
-    # Optional: number of workers (use in your uvicorn launcher if desired)
-    WORKERS: int = 1
+    WORKERS: int = 1  # can be used by your uvicorn launcher
 
     # ================================
     # Model caches (project-local by default)
-    # If not set via env, they will be computed under MODEL_CACHE_ROOT.
+    # Environment can override: APP_MODEL_CACHE_ROOT / APP_HF_HOME / APP_TORCH_HOME / APP_TRANSFORMERS_CACHE
     # ================================
-    MODEL_CACHE_ROOT: Path = Path("models_cache")
+    MODEL_CACHE_ROOT: Path = Path(DEFAULT_MODELS_CACHE)
     HF_HOME: Path | None = None
     TORCH_HOME: Path | None = None
     TRANSFORMERS_CACHE: Path | None = None  # usually HF_HOME/hub
     TRANSFORMERS_OFFLINE: int | bool | None = None  # 1/true to force offline
 
     # ================================
-    # Paths
+    # Paths (anchored to API_ROOT by default)
+    # Can override with APP_STATIC_DIR, APP_TEMPLATES_DIR, APP_UPLOAD_DIR, APP_SAMPLES_DIR
     # ================================
-    STATIC_DIR: Path = Path("app/static")
-    TEMPLATES_DIR: Path = Path("app/templates")
-    UPLOAD_DIR: Path = Path("uploads")
-    SAMPLES_DIR: Path = Path("samples")
+    STATIC_DIR: Path = API_ROOT / "app" / "static"
+    TEMPLATES_DIR: Path = API_ROOT / "app" / "templates"
+    UPLOAD_DIR: Path = API_ROOT / "uploads"
+    SAMPLES_DIR: Path = API_ROOT / "samples"
     UPLOAD_MAX_MB: int = 20
 
     # ================================
@@ -144,7 +150,7 @@ class Settings(BaseSettings):
     # -------------------------------
     def model_post_init(self, __context: Any) -> None:
         if not self.MODEL_CACHE_ROOT:
-            self.MODEL_CACHE_ROOT = Path("models_cache")
+            self.MODEL_CACHE_ROOT = API_ROOT / "models_cache"
 
         if not self.HF_HOME:
             self.HF_HOME = self.MODEL_CACHE_ROOT / "huggingface"
@@ -153,16 +159,14 @@ class Settings(BaseSettings):
         if not self.TRANSFORMERS_CACHE:
             self.TRANSFORMERS_CACHE = self.MODEL_CACHE_ROOT / "huggingface" / "hub"
 
-        # Ensure required directories
+        # Ensure required directories exist
         self.ensure_directories()
 
     # -------------------------------
     # Utilities
     # -------------------------------
     def ensure_directories(self) -> None:
-        """
-        Create required directories if they do not exist.
-        """
+        """Create required directories if they do not exist."""
         for p in [
             self.MODEL_CACHE_ROOT,
             self.HF_HOME,
@@ -176,7 +180,7 @@ class Settings(BaseSettings):
             self.PLUGINS_LOG_FILE.parent,
         ]:
             if p:
-                Path(p).mkdir(parents=True, exist_ok=True)
+                Path(p).resolve().mkdir(parents=True, exist_ok=True)
 
     def export_env_for_caches(self) -> None:
         """
@@ -197,9 +201,7 @@ class Settings(BaseSettings):
                 os.environ.pop("TRANSFORMERS_OFFLINE", None)
 
     def summary(self) -> dict:
-        """
-        Small snapshot for /env or /health endpoints.
-        """
+        """Small snapshot for /env or /health endpoints."""
         return {
             "app": self.APP_NAME,
             "env": self.ENV,
@@ -207,14 +209,14 @@ class Settings(BaseSettings):
             "port": self.PORT,
             "device": self.DEVICE,
             "workers": self.WORKERS,
-            "model_cache_root": str(self.MODEL_CACHE_ROOT),
-            "hf_home": str(self.HF_HOME),
-            "torch_home": str(self.TORCH_HOME),
-            "transformers_cache": str(self.TRANSFORMERS_CACHE),
-            "static_dir": str(self.STATIC_DIR),
-            "templates_dir": str(self.TEMPLATES_DIR),
-            "upload_dir": str(self.UPLOAD_DIR),
-            "samples_dir": str(self.SAMPLES_DIR),
+            "model_cache_root": str(self.MODEL_CACHE_ROOT.resolve()),
+            "hf_home": str(Path(self.HF_HOME).resolve()),
+            "torch_home": str(Path(self.TORCH_HOME).resolve()),
+            "transformers_cache": str(Path(self.TRANSFORMERS_CACHE).resolve()),
+            "static_dir": str(self.STATIC_DIR.resolve()),
+            "templates_dir": str(self.TEMPLATES_DIR.resolve()),
+            "upload_dir": str(self.UPLOAD_DIR.resolve()),
+            "samples_dir": str(self.SAMPLES_DIR.resolve()),
             "db_url": bool(self.DB_URL),
             "jwt_enabled": bool(self.JWT_SECRET),
             "pooling": {
