@@ -1,6 +1,7 @@
 # 🚀 NeuroNexus-ai Dashboard  
 
 <!-- Tech / Stack -->
+[![PSF Member - TamerOnLine](https://img.shields.io/badge/PSF%20Member-TamerOnLine-success?logo=python&logoColor=white)](https://www.python.org/users/TamerOnLine/)
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI 0.116.x](https://img.shields.io/badge/FastAPI-0.116.x-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Streamlit 1.x](https://img.shields.io/badge/Streamlit-1.x-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
