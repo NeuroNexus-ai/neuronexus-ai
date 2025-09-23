@@ -1,7 +1,6 @@
 # 🚀 NeuroNexus-ai Dashboard  
 
 <!-- Tech / Stack -->
-[![PSF Member - TamerOnLine](https://img.shields.io/badge/PSF%20Member-TamerOnLine-success?logo=python&logoColor=white)](https://www.python.org/users/TamerOnLine/)
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI 0.116.x](https://img.shields.io/badge/FastAPI-0.116.x-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Streamlit 1.x](https://img.shields.io/badge/Streamlit-1.x-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
@@ -190,3 +189,11 @@ UI customization via:
 ## 📜 License
 Licensed under the **MIT License** → [LICENSE](./LICENSE).  
 ⚠️ Some AI/ML models have separate licenses: [Model Licenses](fastapi/docs/LICENSES.md).
+
+---
+
+## 🌍 Community & Membership
+
+[![PSF Member](https://img.shields.io/badge/PSF%20Member-TamerOnLine-success?logo=python&logoColor=white)](https://www.python.org/users/TamerOnLine/)
+[![GitHub](https://img.shields.io/badge/GitHub-TamerOnLine-181717?logo=github&logoColor=white)](https://github.com/TamerOnLine)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Profile-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/Tameronline/)
