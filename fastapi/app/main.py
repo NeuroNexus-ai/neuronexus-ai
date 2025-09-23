@@ -4,10 +4,11 @@ import logging
 import uuid
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, HTMLResponse
+from starlette.responses import Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -22,6 +23,7 @@ from app.core.config import get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging_ import setup_logging
 from app.runtime.model_pool import get_model_pool
+from app.core.path_utils import as_path
 
 
 try:
@@ -60,6 +62,11 @@ async def lifespan(app: FastAPI):
 # Application init
 # ========================
 settings = get_settings()
+for name in ("STATIC_DIR", "SAMPLES_DIR", "TEMPLATES_DIR", "UPLOAD_DIR"):
+    if hasattr(settings, name):
+        setattr(settings, name, as_path(getattr(settings, name)))
+
+
 setup_logging()
 templates = Jinja2Templates(directory=str(settings.TEMPLATES_DIR))
 
@@ -77,8 +84,19 @@ app = FastAPI(
 )
 
 # Static files
-app.mount("/static", StaticFiles(directory=str(settings.STATIC_DIR)), name="static")
-app.mount("/samples", StaticFiles(directory=str(settings.SAMPLES_DIR)), name="samples")
+# Static files (ensure dirs or allow startup even if missing)
+settings.STATIC_DIR.mkdir(parents=True, exist_ok=True)   # NEW (optional but recommended)
+settings.SAMPLES_DIR.mkdir(parents=True, exist_ok=True)  # NEW (optional but recommended)
+app.mount(
+    "/static",
+    StaticFiles(directory=str(settings.STATIC_DIR), check_dir=False),  # NEW: check_dir=False
+    name="static",
+)
+app.mount(
+    "/samples",
+    StaticFiles(directory=str(settings.SAMPLES_DIR), check_dir=False), # NEW: check_dir=False
+    name="samples",
+)
 
 # CORS
 app.add_middleware(
@@ -118,15 +136,40 @@ def health():
     return {"status": "ok"}
 
 
-@app.get("/env")
-def env():
-    return settings.summary()
+# Automatically enabled outside production; in production, it depends on EXPOSE_ENV_ENDPOINT setting
+EXPOSE_ENV = (settings.ENV != "production") or settings.EXPOSE_ENV_ENDPOINT
+if EXPOSE_ENV:
+
+    @app.get("/env", include_in_schema=(settings.ENV != "production"))
+    def env(x_admin_token: str | None = Header(default=None, alias="X-Admin-Token")):
+        """
+        Returns a summary of application settings if authorized.
+
+        This endpoint is conditionally exposed based on the environment. In production,
+        access is restricted via a token for security purposes.
+
+        Args:
+            x_admin_token (str | None): The admin token from the 'X-Admin-Token' HTTP header.
+
+        Raises:
+            HTTPException: If in production and the provided token is invalid.
+
+        Returns:
+            dict: A dictionary summary of the application settings.
+        """
+        # In production: require a specific token if configured
+        if settings.ENV == "production":
+            expected = settings.ENV_SECRET_TOKEN
+            if expected and x_admin_token != expected:
+                raise HTTPException(status_code=403, detail="Forbidden")
+
+        return settings.summary()
 
 
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
-    return FileResponse(str(settings.STATIC_DIR / "favicon.ico"))
-
+    p = settings.STATIC_DIR / "favicon.ico"
+    return FileResponse(str(p)) if p.is_file() else Response(status_code=204)  # NEW
 
 # Routers
 app.include_router(uploads_router)

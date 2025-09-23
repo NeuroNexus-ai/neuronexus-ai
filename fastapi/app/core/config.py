@@ -46,12 +46,14 @@ class Settings(BaseSettings):
     # ================================
     # Basic service configuration
     # ================================
-    APP_NAME: str = "NeuroNexus-ai"
-    VERSION: str = "0.1.0"
-    ENV: str = Field("development", description="development | staging | production")
-    HOST: str = "0.0.0.0"
-    PORT: int = 8000
-    RELOAD: bool = True
+    APP_NAME: str = "NeuroNexus-ai" # Application name
+    VERSION: str = "0.1.0" # Application version
+    ENV: str = Field("development", description="development | staging | production") # Environment
+    HOST: str = "0.0.0.0" # Host to bind
+    PORT: int = 8000 # Port to bind
+    RELOAD: bool = True # whether to enable auto-reload (dev only)
+    EXPOSE_ENV_ENDPOINT: bool = False  # whether to enable /env endpoint
+    ENV_SECRET_TOKEN: str | None = None  # optional token to protect /env in
 
     # ================================
     # Logging configuration
