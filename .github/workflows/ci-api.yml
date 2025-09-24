@@ -1,45 +1,58 @@
-name: API CI
+name: CI - API
+
 on:
   push:
     paths:
-      - 'fastapi/**'                  
-      - '.github/workflows/ci-api.yml' 
+      - 'fastapi/**'
+      - '.github/workflows/ci-api.yml'
+      - '.github/workflows/ci-macos.yml'
+      - '.github/workflows/ci-ubuntu.yml'
   pull_request:
     paths:
       - 'fastapi/**'
       - '.github/workflows/ci-api.yml'
+      - '.github/workflows/ci-macos.yml'
+      - '.github/workflows/ci-ubuntu.yml'
 
 jobs:
-  test:
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: pwsh
+  test-api:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONUTF8: "1"
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
-      - name: Install deps (API)
-        run: |
-          cd fastapi
-          python -m venv .venv
-          .\.venv\Scripts\python.exe -m pip install --upgrade pip
-          .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-          if (Test-Path requirements-dev.txt) { .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt }
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: api-${{ hashFiles('fastapi/requirements.txt', 'fastapi/requirements-dev.txt') }}
+          restore-keys: |
+            api-
 
-      - name: Force UTF-8 on Windows console
-        if: runner.os == 'Windows'
+      - name: Install dependencies (fastapi)
+        working-directory: fastapi
         run: |
-          chcp.com 65001 > $null
-          [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
-          $env:PYTHONIOENCODING = 'utf-8'
-          $env:PYTHONUTF8 = '1'
+          python -m pip install --upgrade pip
+          pip install wheel
+          pip install -r requirements.txt
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; else pip install pytest; fi
 
-      - name: Run env endpoint tests
-        run: |
-          $env:PYTHONPATH = (Resolve-Path .\fastapi).Path
-          .\fastapi\.venv\Scripts\python.exe -X utf8 -m scripts.test_env_endpoint
+      
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE/fastapi" >> $GITHUB_ENV
+
+      - name: Sanity import
+        working-directory: fastapi
+        run: python -c "import app, sys; print('app OK ->', app.__file__)"
+
+      - name: Run tests
+        working-directory: fastapi
+        run: pytest -q
