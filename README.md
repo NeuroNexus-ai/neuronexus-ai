@@ -199,3 +199,5 @@ Licensed under the **MIT License** → [LICENSE](./LICENSE).
 [![PSF Member](https://img.shields.io/badge/PSF%20Member-TamerOnLine-success?logo=python&logoColor=white)](https://www.python.org/users/TamerOnLine/)
 [![GitHub](https://img.shields.io/badge/GitHub-TamerOnLine-181717?logo=github&logoColor=white)](https://github.com/TamerOnLine)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Profile-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/Tameronline/)
+
+---
