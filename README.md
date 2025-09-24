@@ -203,6 +203,8 @@ For more details, see the official [OSI page](https://opensource.org/licenses/MI
 [![GitHub](https://img.shields.io/badge/GitHub-TamerOnLine-181717?logo=github&logoColor=white)](https://github.com/TamerOnLine)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Profile-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/Tameronline/)
 [![PyPI - TamerOnLine](https://img.shields.io/badge/PyPI-TamerOnLine-blue?logo=pypi&logoColor=white)](https://pypi.org/user/TamerOnLine/)
+[![YouTube](https://img.shields.io/badge/YouTube-Subscribe-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/@mystrotamer)
+
 
 
 ---
