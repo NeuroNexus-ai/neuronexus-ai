@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   gpu-tests:
-    runs-on: [self-hosted, windows, gpu, cuda, nvidia]
+    runs-on: [self-hosted, Windows, gpu, cuda, nvidia]
     timeout-minutes: 45
     defaults:
       run:
