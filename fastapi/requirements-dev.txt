@@ -23,3 +23,6 @@ flake8-pyproject  # flake8 config from pyproject.toml
 
 # pdf-reader
 httpx
+
+graphviz
+matplotlib
