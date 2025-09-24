@@ -100,7 +100,10 @@ jobs:
         working-directory: fastapi
         run: |
           $py = ".\.venv\Scripts\python.exe"
-          if (Test-Path .\pytest.ini -or (Get-ChildItem -Recurse -Include "*test*.py" | Select-Object -First 1)) {
+
+          $hasIni   = (Test-Path .\pytest.ini)
+          $hasFiles = (Get-ChildItem -Path . -Recurse -Filter "*test*.py" -File | Select-Object -First 1)
+          if ( $hasIni -or $hasFiles ) {
             & $py -m pip install pytest pytest-cov
             & $py -m pytest -q --maxfail=1 --disable-warnings `
               --cov=app --cov-report=xml --junitxml=pytest-report.xml
