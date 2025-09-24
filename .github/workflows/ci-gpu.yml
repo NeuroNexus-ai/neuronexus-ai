@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 45
     defaults:
       run:
-        shell: pwsh
+        shell: powershell
     env:
       PYTHONUTF8: "1"
       HF_HOME: ${{ github.workspace }}\fastapi\models_cache\huggingface
