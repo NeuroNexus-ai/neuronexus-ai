@@ -15,10 +15,6 @@
 [![CI • Streamlit](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-streamlit.yml/badge.svg?branch=main)](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-streamlit.yml)
 [![CI • Windows Self-Hosted + GPU](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-gpu.yml/badge.svg?branch=main)](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-gpu.yml)
 
-<!-- License -->
-[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT)
-
-
 
 ---
 
@@ -188,8 +184,13 @@ UI customization via:
 
 ---
 
-## 📜 License
+## 📜 License  
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)  
+
 Licensed under the **MIT License** → [LICENSE](./LICENSE).  
+For more details, see the official [OSI page](https://opensource.org/licenses/MIT).  
+
 ⚠️ Some AI/ML models have separate licenses: [Model Licenses](fastapi/docs/LICENSES.md).
 
 ---
