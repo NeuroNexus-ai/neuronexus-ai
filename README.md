@@ -22,9 +22,9 @@
 ## 📦 Releases
 
 [![GitHub release](https://img.shields.io/github/v/release/NeuroNexus-ai/neuronexus-ai?color=blue)](https://github.com/NeuroNexus-ai/neuronexus-ai/releases)
+[![GitHub stars](https://img.shields.io/github/stars/NeuroNexus-ai/neuronexus-ai?style=social)](https://github.com/NeuroNexus-ai/neuronexus-ai/stargazers)
 
 ➡️ [View all releases](https://github.com/NeuroNexus-ai/neuronexus-ai/releases)
-[![GitHub stars](https://img.shields.io/github/stars/NeuroNexus-ai/neuronexus-ai?style=social)](https://github.com/NeuroNexus-ai/neuronexus-ai/stargazers)
 
 ---
 
