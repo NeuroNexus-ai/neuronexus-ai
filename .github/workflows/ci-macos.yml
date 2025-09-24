@@ -1,6 +1,16 @@
 name: macOS CI
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'fastapi/**'
+      - '.github/workflows/ci-macos.yml'
+
+  pull_request:
+    paths:
+      - 'fastapi/**'
+      - '.github/workflows/ci-macos.yml'
+
 
 jobs:
   test:

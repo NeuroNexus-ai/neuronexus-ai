@@ -1,6 +1,15 @@
 name: Ubuntu CI
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'fastapi/**'
+      - '.github/workflows/ci-ubuntu.yml'
+  pull_request:
+    paths:
+      - 'fastapi/**'
+      - '.github/workflows/ci-ubuntu.yml'
+
 
 jobs:
   test:

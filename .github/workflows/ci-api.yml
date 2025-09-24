@@ -5,14 +5,11 @@ on:
     paths:
       - 'fastapi/**'
       - '.github/workflows/ci-api.yml'
-      - '.github/workflows/ci-macos.yml'
-      - '.github/workflows/ci-ubuntu.yml'
+
   pull_request:
     paths:
       - 'fastapi/**'
       - '.github/workflows/ci-api.yml'
-      - '.github/workflows/ci-macos.yml'
-      - '.github/workflows/ci-ubuntu.yml'
 
 jobs:
   test-api:
