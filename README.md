@@ -12,6 +12,8 @@
 [![CI • Windows](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-windows.yml/badge.svg?branch=main)](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-windows.yml)
 [![CI • macOS](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-macos.yml/badge.svg?branch=main)](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-macos.yml)
 [![CI • Windows Self-Hosted + GPU](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-gpu.yml/badge.svg?branch=main)](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-gpu.yml)
+[![GPU Tests](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-gpu.yml/badge.svg)](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-gpu.yml)
+
 
 <!-- License -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT)
