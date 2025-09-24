@@ -17,6 +17,14 @@
 [![CI • Streamlit](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-streamlit.yml/badge.svg?branch=main)](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-streamlit.yml)
 [![CI • Windows Self-Hosted + GPU](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-gpu.yml/badge.svg?branch=main)](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-gpu.yml)
 
+---
+
+## 📦 Releases
+
+[![GitHub release](https://img.shields.io/github/v/release/NeuroNexus-ai/neuronexus-ai?color=blue)](https://github.com/NeuroNexus-ai/neuronexus-ai/releases)
+
+➡️ [View all releases](https://github.com/NeuroNexus-ai/neuronexus-ai/releases)
+[![GitHub stars](https://img.shields.io/github/stars/NeuroNexus-ai/neuronexus-ai?style=social)](https://github.com/NeuroNexus-ai/neuronexus-ai/stargazers)
 
 ---
 
