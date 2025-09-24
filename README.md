@@ -1,5 +1,29 @@
 # 🚀 NeuroNexus-ai Dashboard  
 
+<!-- TOC -->
+## 📑 Table of Contents
+- [Tech / Stack](#-tech--stack)
+- [CI Status](#-ci-status)
+- [Releases](#-releases)
+- [Overview](#-overview)
+- [Demo](#-demo)
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [Quick Setup](#-quick-setup)
+- [Run with Orchestrator](#-run-with-orchestrator)
+- [Streamlit Dashboard](#-streamlit-dashboard)
+- [FastAPI Server](#-fastapi-server)
+- [Plugins & Workflows](#-plugins--workflows)
+- [Customization](#-customization)
+- [Screenshots](#-screenshots)
+- [Deployment Notes](#-deployment-notes)
+- [Contributing](#-contributing)
+- [Roadmap](#-roadmap)
+- [License](#-license)
+- [Community & Membership](#-community--membership)
+
+---
+
 <!-- Tech / Stack -->
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI 0.116.x](https://img.shields.io/badge/FastAPI-0.116.x-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -7,7 +31,6 @@
 [![PyTorch 2.6.x](https://img.shields.io/badge/PyTorch-2.6.x-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![CUDA Ready](https://img.shields.io/badge/CUDA-Ready-76B900?logo=nvidia&logoColor=white)](https://developer.nvidia.com/cuda-zone)
 [![Code Style: Ruff](https://img.shields.io/badge/Code%20Style-Ruff-33CCFF.svg)](https://docs.astral.sh/ruff/)
-
 
 <!-- CI Status (GitHub Actions) -->
 [![CI • API](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-api.yml/badge.svg?branch=main)](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-api.yml)
@@ -20,7 +43,6 @@
 ---
 
 ## 📦 Releases
-
 [![GitHub release](https://img.shields.io/github/v/release/NeuroNexus-ai/neuronexus-ai?color=blue)](https://github.com/NeuroNexus-ai/neuronexus-ai/releases)
 [![GitHub stars](https://img.shields.io/github/stars/NeuroNexus-ai/neuronexus-ai?style=social)](https://github.com/NeuroNexus-ai/neuronexus-ai/stargazers)
 
@@ -42,20 +64,22 @@ It provides:
 ---
 
 ## 🎥 Demo
-
 <p align="center">
   <img src="docs/video/NeuroNexus-ai.gif" alt="Dashboard Demo" width="800">
 </p>
 
-
 ---
 
 ## ✨ Features
-- Orchestrate **FastAPI + Streamlit** with one command.
-- Manage multiple services easily via sidebar.
-- Unified **Inference API** for plugin tasks.
-- Plugins & workflows for modular extensibility.
-- Professional dashboard interface with custom CSS.
+| Feature | Description | Status |
+|---------|-------------|--------|
+| Orchestration | Run and monitor FastAPI + Streamlit with one command | ✅ Ready |
+| Multi-service management | Add, delete, test connectivity, and store tokens | ✅ Ready |
+| Unified Inference API | Single entrypoint for plugin tasks | ✅ Ready |
+| Plugins & Workflows | Modular extensibility for AI tasks | ✅ Ready |
+| Custom UI Theme | Dashboard customization via CSS | ✅ Ready |
+| JWT Authentication | Demo authentication & security | ⚙️ In Progress |
+| Docker Support | One-click deployment | ⏳ Planned |
 
 ---
 
@@ -78,7 +102,14 @@ git clone https://github.com/TamerOnLine/repo-server
 cd repo-server
 ```
 
-### 2. Virtualenvs (recommended)
+### 2. Quick Install (TL;DR)
+```bash
+cd fastapi && pip install -r requirements.txt
+cd ../streamlit && pip install -r requirements.txt
+py -m run_all
+```
+
+### 3. Virtualenvs (recommended)
 ```bash
 cd fastapi
 python -m venv .venv
@@ -94,7 +125,6 @@ pip install -r requirements.txt
 ---
 
 ## 🚀 Run with Orchestrator
-
 ```bash
 py -m run_all        # start API + Dashboard
 py -m run_all api    # start only API
@@ -186,16 +216,15 @@ UI customization via:
 ---
 
 ## 🗺️ Roadmap
-- [ ] Docker one-click deployment.  
-- [ ] CLI generator for Plugins & Workflows.  
-- [ ] Extended Auth system (JWT + user management).  
-- [ ] Expanded integration tests (CI/CD).  
-- [ ] Example Plugins: translation, summarization, image classification.  
+- [ ] 📦 Docker one-click deployment.  
+- [ ] ⚙️ CLI generator for Plugins & Workflows.  
+- [ ] 🔐 Extended Auth system (JWT + user management).  
+- [ ] ✅ Expanded integration tests (CI/CD).  
+- [ ] 🧩 Example Plugins: translation, summarization, image classification.  
 
 ---
 
 ## 📜 License  
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)  
 
 Licensed under the **MIT License** → [LICENSE](./LICENSE).  
@@ -206,13 +235,10 @@ For more details, see the official [OSI page](https://opensource.org/licenses/MI
 ---
 
 ## 🌍 Community & Membership
-
 [![PSF Member](https://img.shields.io/badge/PSF%20Member-TamerOnLine-success?logo=python&logoColor=white)](https://www.python.org/users/TamerOnLine/)
 [![GitHub](https://img.shields.io/badge/GitHub-TamerOnLine-181717?logo=github&logoColor=white)](https://github.com/TamerOnLine)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Profile-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/Tameronline/)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Profile-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/tameronline/)
 [![PyPI - TamerOnLine](https://img.shields.io/badge/PyPI-TamerOnLine-blue?logo=pypi&logoColor=white)](https://pypi.org/user/TamerOnLine/)
 [![YouTube](https://img.shields.io/badge/YouTube-Subscribe-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/@mystrotamer)
-
-
 
 ---
