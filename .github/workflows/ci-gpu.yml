@@ -2,7 +2,14 @@ name: CI - GPU (Windows self-hosted)
 
 on:
   push:
+    paths:
+      - 'fastapi/**'
+      - '.github/workflows/ci-gpu.yml'
+
   pull_request:
+    paths:
+      - 'fastapi/**'
+      - '.github/workflows/ci-gpu.yml'
 
 permissions:
   contents: read

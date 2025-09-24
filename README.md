@@ -8,12 +8,12 @@
 [![CUDA Ready](https://img.shields.io/badge/CUDA-Ready-76B900?logo=nvidia&logoColor=white)](https://developer.nvidia.com/cuda-zone)
 
 <!-- CI Status (GitHub Actions) -->
+[![CI • API](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-api.yml/badge.svg?branch=main)](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-api.yml)
 [![CI • Ubuntu](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-ubuntu.yml/badge.svg?branch=main)](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-ubuntu.yml)
 [![CI • Windows](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-windows.yml/badge.svg?branch=main)](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-windows.yml)
 [![CI • macOS](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-macos.yml/badge.svg?branch=main)](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-macos.yml)
+[![CI • Streamlit](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-streamlit.yml/badge.svg?branch=main)](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-streamlit.yml)
 [![CI • Windows Self-Hosted + GPU](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-gpu.yml/badge.svg?branch=main)](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-gpu.yml)
-[![GPU Tests](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-gpu.yml/badge.svg)](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-gpu.yml)
-
 
 <!-- License -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT)
