@@ -1,11 +1,17 @@
 name: API CI
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'fastapi/**'                  
+      - '.github/workflows/ci-api.yml' 
+  pull_request:
+    paths:
+      - 'fastapi/**'
+      - '.github/workflows/ci-api.yml'
+
 jobs:
   test:
     runs-on: windows-latest
-    env:
-      PYTHONIOENCODING: utf-8
-      PYTHONUTF8: "1"
     defaults:
       run:
         shell: pwsh
@@ -33,9 +39,7 @@ jobs:
           $env:PYTHONIOENCODING = 'utf-8'
           $env:PYTHONUTF8 = '1'
 
-
-
       - name: Run env endpoint tests
         run: |
           $env:PYTHONPATH = (Resolve-Path .\fastapi).Path
-          .\fastapi\.venv\Scripts\python.exe -m scripts.test_env_endpoint
+          .\fastapi\.venv\Scripts\python.exe -X utf8 -m scripts.test_env_endpoint
