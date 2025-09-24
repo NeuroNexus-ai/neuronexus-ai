@@ -6,6 +6,8 @@
 [![Streamlit 1.x](https://img.shields.io/badge/Streamlit-1.x-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![PyTorch 2.6.x](https://img.shields.io/badge/PyTorch-2.6.x-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![CUDA Ready](https://img.shields.io/badge/CUDA-Ready-76B900?logo=nvidia&logoColor=white)](https://developer.nvidia.com/cuda-zone)
+[![Code Style: Ruff](https://img.shields.io/badge/Code%20Style-Ruff-33CCFF.svg)](https://docs.astral.sh/ruff/)
+
 
 <!-- CI Status (GitHub Actions) -->
 [![CI • API](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-api.yml/badge.svg?branch=main)](https://github.com/NeuroNexus-ai/neuronexus-ai/actions/workflows/ci-api.yml)
