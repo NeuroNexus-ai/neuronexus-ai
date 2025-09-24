@@ -97,11 +97,11 @@ jobs:
                     & $py _torch_check.py
 
 
-                # --- 8) Run tests if present ---
-                - name: Run GPU tests (pytest if present)
-                  working-directory: fastapi
-                  run: |
-                    $py = ".\.venv\Scripts\python.exe"
+      # --- 8) Run tests if present ---
+      - name: Run GPU tests (pytest if present)
+        working-directory: fastapi
+        run: |
+          $py = ".\.venv\Scripts\python.exe"
 
           $hasIni   = (Test-Path .\pytest.ini)
           $hasFiles = (Get-ChildItem -Path . -Recurse -Filter "*test*.py" -File | Select-Object -First 1)
