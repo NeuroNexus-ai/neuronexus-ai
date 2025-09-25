@@ -4,24 +4,29 @@ import os, sys, subprocess, venv
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-VENV_DIR = ROOT / ".venv.tools"
-PY_EXE = VENV_DIR / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+TOOLS_VENV = ROOT / ".venv.tools"
+PY_EXE = TOOLS_VENV / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
 REQS = ROOT / "requirements-tools.txt"
 
 def ensure_tools_venv() -> None:
-    if not VENV_DIR.exists():
-        print(f"[tools] creating {VENV_DIR} …")
-        venv.EnvBuilder(with_pip=True).create(str(VENV_DIR))
+    if not TOOLS_VENV.exists():
+        print(f"[tools] creating {TOOLS_VENV} …")
+        venv.EnvBuilder(with_pip=True).create(str(TOOLS_VENV))
     print("[tools] installing dev requirements …")
     subprocess.check_call([str(PY_EXE), "-m", "pip", "install", "-U", "pip"])
     subprocess.check_call([str(PY_EXE), "-m", "pip", "install", "-r", str(REQS)])
 
 def main() -> int:
     ensure_tools_venv()
-    # alias: tools/rs.py bootstrap  ==> apply --profile profiles/bootstrap.json
     argv = sys.argv[1:]
+
+    # Special: bootstrap uses our cross-platform script (no JSON profiles, works everywhere)
     if argv[:1] == ["bootstrap"]:
-        argv = ["apply", "--profile", "profiles/bootstrap.json"]
+        script = ROOT / "tools" / "bootstrap_envs.py"
+        cmd = [str(PY_EXE), str(script)]
+        return subprocess.call(cmd + argv[1:])  # forward any extra flags
+
+    # Passthrough to reposmith for other commands if you still need them
     cmd = [str(PY_EXE), "-m", "reposmith_tol"] + argv
     return subprocess.call(cmd)
 
