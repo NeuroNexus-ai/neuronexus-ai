@@ -12,15 +12,17 @@ def ensure_tools_venv() -> None:
     if not VENV_DIR.exists():
         print(f"[tools] creating {VENV_DIR} …")
         venv.EnvBuilder(with_pip=True).create(str(VENV_DIR))
-    # upgrade pip & install reqs
     print("[tools] installing dev requirements …")
     subprocess.check_call([str(PY_EXE), "-m", "pip", "install", "-U", "pip"])
     subprocess.check_call([str(PY_EXE), "-m", "pip", "install", "-r", str(REQS)])
 
 def main() -> int:
     ensure_tools_venv()
-    # pass-through to reposmith_tol
-    cmd = [str(PY_EXE), "-m", "reposmith_tol"] + sys.argv[1:]
+    # alias: tools/rs.py bootstrap  ==> apply --profile profiles/bootstrap.json
+    argv = sys.argv[1:]
+    if argv[:1] == ["bootstrap"]:
+        argv = ["apply", "--profile", "profiles/bootstrap.json"]
+    cmd = [str(PY_EXE), "-m", "reposmith_tol"] + argv
     return subprocess.call(cmd)
 
 if __name__ == "__main__":

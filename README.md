@@ -108,24 +108,14 @@ neuronexus-ai/
 ## 🪟 Windows (PowerShell)
 
 ```powershell
-# Clone the repository
+# 1) Clone
 git clone https://github.com/NeuroNexus-ai/neuronexus-ai.git
 cd neuronexus-ai
 
-# Setup the API
-cd fastapi
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+# 2) Bootstrap via reposmith
+py tools/rs.py bootstrap
 
-# Setup the UI
-cd ..\streamlit
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-
-# Run the whole system
-cd ..
+# 3) Run
 py -m run_all
 ```
 
@@ -134,32 +124,25 @@ py -m run_all
 ## 🐧 Linux / macOS (bash)
 
 ```bash
-# Clone the repository
+# 1) Clone
 git clone https://github.com/NeuroNexus-ai/neuronexus-ai.git
 cd neuronexus-ai
 
-# Setup the API
-cd fastapi
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+# 2) Bootstrap via reposmith
+python3 tools/rs.py bootstrap
 
-# Setup the UI
-cd ../streamlit
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-# Run the whole system
-cd ..
+# 3) Run
 python -m run_all
+
 ```
 
 ---
 
-## 💡 Notes
-- It is recommended to use **separate virtual environments** for each part (API + UI) as shown.  
-- If you prefer a **single shared environment** for the entire project instead of two, I can add a third section to explain that.  
+### 💡 Notes
+
+  - By default, reposmith bootstrap will create separate virtual environments for API + UI.
+
+  - If you want a single shared environment, you can still set it up manually.
 
 ---
 

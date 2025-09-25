@@ -1,0 +1,21 @@
+{
+  "name": "neuronexus-bootstrap",
+  "steps": [
+    {
+      "kind": "venv",
+      "path": "fastapi/.venv",
+      "requirements": "fastapi/requirements.txt"
+    },
+    {
+      "kind": "venv",
+      "path": "streamlit/.venv",
+      "requirements": "streamlit/requirements.txt"
+    },
+    {
+      "kind": "venv",
+      "path": ".venv.tools",
+      "requirements": "requirements-tools.txt",
+      "optional": true
+    }
+  ]
+}
