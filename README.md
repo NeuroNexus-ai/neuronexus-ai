@@ -85,42 +85,81 @@ It provides:
 
 ## 🧱 Architecture
 ```text
-repo-server/
-├─ fastapi/      # FastAPI server (APIs, Plugins, Workflows, Docs, Tests)
-├─ streamlit/    # Streamlit dashboard + .streamlit/servers.json
-├─ run_all.py    # Orchestrator: launches + health checks + graceful shutdown
-└─ servers.json  # Service definitions (paths, python_exe, health URLs…)
+neuronexus-ai/
+├── fastapi/          # FastAPI backend
+│   ├── app/
+│   │   ├── api/      # Routers (auth, inference, uploads, plugins, services, workflows)
+│   │   ├── plugins/  # Plugins (dummy, pdf_reader, whisper, ...)
+│   │   ├── services/ # Services (parallel to plugins)
+│   │   ├── workflows/# Orchestrator + registry
+│   │   └── core/     # Config, errors, logging, path utils
+│   └── tools/        # Diagram generators, plugin wrapper scripts
+├── streamlit/        # Streamlit Dashboard (UI)
+│   ├── core/         # API calls, state, storage
+│   └── ui/           # Sidebar + tabs (inference, uploads, workflows, etc.)
+└── uploads/          # User uploads (pdf, audio, video, images, txt)
+
 ```
 
 ---
 
-## ⚡ Quick Setup
+# ⚡ Quick Setup
 
-### 1. Clone
-```bash
-git clone https://github.com/TamerOnLine/repo-server
-cd repo-server
-```
+## 🪟 Windows (PowerShell)
 
-### 2. Quick Install (TL;DR)
-```bash
-cd fastapi && pip install -r requirements.txt
-cd ../streamlit && pip install -r requirements.txt
+```powershell
+# Clone the repository
+git clone https://github.com/NeuroNexus-ai/neuronexus-ai.git
+cd neuronexus-ai
+
+# Setup the API
+cd fastapi
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+
+# Setup the UI
+cd ..\streamlit
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+
+# Run the whole system
+cd ..
 py -m run_all
 ```
 
-### 3. Virtualenvs (recommended)
+---
+
+## 🐧 Linux / macOS (bash)
+
 ```bash
+# Clone the repository
+git clone https://github.com/NeuroNexus-ai/neuronexus-ai.git
+cd neuronexus-ai
+
+# Setup the API
 cd fastapi
-python -m venv .venv
-.venv\Scripts\activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 
+# Setup the UI
 cd ../streamlit
-python -m venv .venv
-.venv\Scripts\activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
+
+# Run the whole system
+cd ..
+python -m run_all
 ```
+
+---
+
+## 💡 Notes
+- It is recommended to use **separate virtual environments** for each part (API + UI) as shown.  
+- If you prefer a **single shared environment** for the entire project instead of two, I can add a third section to explain that.  
 
 ---
 
