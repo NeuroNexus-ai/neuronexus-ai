@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Cross-platform bootstrap: creates venvs and installs requirements
 from __future__ import annotations
+
 import os
 import sys
 import subprocess
@@ -10,19 +11,23 @@ from typing import Optional, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
 
+
 def is_windows() -> bool:
     return os.name == "nt"
 
-def bin_dir(venv_path: Path) -> Path:
+
+def bindir(venv_path: Path) -> Path:
     return venv_path / ("Scripts" if is_windows() else "bin")
 
+
 def exe(name: str) -> str:
-    # add .exe on Windows for pip/python
     return f"{name}.exe" if is_windows() else name
+
 
 def run(cmd: Sequence[str], cwd: Optional[Path] = None) -> None:
     print(f"[run] {' '.join(cmd)}")
     subprocess.check_call(cmd, cwd=str(cwd) if cwd else None)
+
 
 def ensure_venv(venv_path: Path) -> None:
     if not venv_path.exists():
@@ -31,16 +36,41 @@ def ensure_venv(venv_path: Path) -> None:
     else:
         print(f"[venv] exists: {venv_path}")
 
+
+def venv_python(venv_path: Path) -> Path:
+    py = bindir(venv_path) / exe("python")
+    if not py.exists():  # fallback (rare)
+        # Some environments only have "python3" symlink
+        alt = bindir(venv_path) / ("python3.exe" if is_windows() else "python3")
+        return alt if alt.exists() else py
+    return py
+
+
+def venv_pip(venv_path: Path) -> Optional[Path]:
+    pip = bindir(venv_path) / exe("pip")
+    if pip.exists():
+        return pip
+    # fallback to python -m pip if pip shim not present
+    return None
+
+
 def pip_install(venv_path: Path, *args: str) -> None:
-    pip_path = bin_dir(venv_path) / exe("pip")
-    run([str(pip_path), *args])
+    pip = venv_pip(venv_path)
+    if pip is not None:
+        run([str(pip), *args])
+    else:
+        py = venv_python(venv_path)
+        run([str(py), "-m", "pip", *args])
+
 
 def install_requirements(venv_path: Path, req_file: Path) -> None:
     if not req_file.exists():
         print(f"[warn] requirements file not found: {req_file}")
         return
+    # Correct: upgrade pip via "install -U"
     pip_install(venv_path, "install", "-U", "pip")
     pip_install(venv_path, "install", "-r", str(req_file))
+
 
 def bootstrap(
     api_dir: Path = ROOT / "fastapi",
@@ -70,8 +100,9 @@ def bootstrap(
     if with_tools:
         print("    - .venv.tools ready")
 
+
 def main() -> int:
-    # minimal CLI: support --no-tools
+    # minimal CLI flags
     with_tools = "--no-tools" not in sys.argv
     try:
         bootstrap(with_tools=with_tools)
@@ -82,6 +113,7 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         print(f"[fatal] {e}", file=sys.stderr)
         return 1
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
