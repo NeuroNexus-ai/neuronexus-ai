@@ -184,8 +184,7 @@ def features_for(base_url: str) -> Dict[str, bool]:
     return {
         "auth":      supports(base_url, "POST", "/auth/login"),
         "auth_me":   supports(base_url, "GET",  "/auth/me"),
-        # 👇 uploads: المسار العام
-        "uploads":   supports(base_url, "POST", "/uploads") or supports(base_url, "GET", "/uploads/{category}"),
+        "uploads": supports(base_url, "GET", "/uploads/pdf") or supports(base_url, "POST", "/uploads/pdf"),
         "plugins":   supports(base_url, "GET",  "/plugins") and supports(base_url, "POST", "/plugins/{name}/{task}"),
         "inference": supports(base_url, "POST", "/inference"),
         "workflows": supports(base_url, "GET",  "/workflows") or supports(base_url, "POST", "/workflows/run"),
@@ -436,40 +435,41 @@ with tabs[1]:
     st.subheader("Uploads")
     uploads_disabled = no_selection or not current_feats.get("uploads", False)
 
-    # 1) رفع أي نوع ملف + إرسال الـ MIME
+    # Generic file selection (مش بس PDF)
     file = st.file_uploader(
         "Choose a file",
-        type=None,                      # 👈 يقبل جميع الأنواع
+        type=None,  # 👈 يقبل جميع الأنواع
         disabled=uploads_disabled,
         key="upl-file"
     )
+
     if file is not None:
-        files = {"file": (file.name, file.getvalue(), file.type or "application/octet-stream")}
+        files = {"file": (file.name, file.getvalue())}
         if st.button("POST /uploads", disabled=uploads_disabled, key="upl-post"):
+            # 👈 استخدم المسار العام بدل /uploads/pdf
             resp = api_request("POST", "/uploads", files=files)
             show_response(resp)
 
     st.markdown("---")
 
-    # 2) اختيار الفئة للاستعراض/التنزيل
-    # أضف/احذف عناصر القائمة حسب ما يدعمه الباكإند عندك
+    # Choose category to list files
     category = st.selectbox(
         "Category",
-        ["pdf", "image", "audio", "video", "text", "archive", "docs", "other"],  # 👈 كل الأنواع
+        ["pdf", "image", "audio", "video", "text", "archive", "other"],
         key="upl-cat"
     )
 
-    # 3) الزر يعكس الفئة المختارة ويتصل بالمسار العام
     if st.button(f"GET /uploads/{category}", disabled=uploads_disabled, key="upl-get"):
         resp = api_request("GET", f"/uploads/{category}")
         if resp.ok:
             data = resp.json()
             st.json(data)
 
-            # أزرار تنزيل حسب rel_path المُعاد من الخادم
+            # Download file buttons
             for f in data.get("files", []):
                 rel_path = f.get("rel_path", "")
                 fname = rel_path.split("/")[-1]
+
                 col1, col2 = st.columns([3, 1])
                 with col1:
                     st.write(f"- {fname} ({f.get('size_bytes', 0)} bytes)")
