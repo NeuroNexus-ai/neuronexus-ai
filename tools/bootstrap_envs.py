@@ -39,7 +39,7 @@ def install_requirements(venv_path: Path, req_file: Path) -> None:
     if not req_file.exists():
         print(f"[warn] requirements file not found: {req_file}")
         return
-    pip_install(venv_path, "-U", "pip")
+    pip_install(venv_path, "install", "-U", "pip")
     pip_install(venv_path, "install", "-r", str(req_file))
 
 def bootstrap(
