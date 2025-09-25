@@ -1,0 +1,6 @@
+# Dev tools pinned here
+reposmith-tol>=0.2
+pre-commit>=3.7
+ruff>=0.5
+black>=24.8
+isort>=5.13
