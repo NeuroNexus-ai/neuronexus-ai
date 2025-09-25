@@ -1,0 +1,15 @@
+{
+  "name": "embeddings",
+  "kind": "plugin",
+  "folder": "embeddings",
+  "provider": "local",
+  "code": "app/plugins/embeddings/plugin.py",
+  "tasks": [
+    "upsert",
+    "search"
+  ],
+  "models": [],
+  "diagram": {
+    "mmd": "diagram/arch_embeddings.mmd"
+  }
+}
