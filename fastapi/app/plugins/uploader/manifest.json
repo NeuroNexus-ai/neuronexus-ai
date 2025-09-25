@@ -1,0 +1,11 @@
+{
+  "name": "uploader",
+  "kind": "plugin",
+  "folder": "uploader",
+  "provider": "local",
+  "code": "app/plugins/uploader/plugin.py",
+  "tasks": [
+    "transcribe"
+  ],
+  "models": []
+}

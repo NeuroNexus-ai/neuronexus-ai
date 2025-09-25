@@ -1,0 +1,43 @@
+{
+  "direction": "LR",
+  "service": "",
+  "include_empty": false,
+  "edge_color": "#90A4AE",
+  "edge_width": 2.0,
+  "arrow_size": 2.0,
+  "loader_edge_color": "#B0BEC5",
+  "edge_label_color": "#455A64",
+  "font": "Segoe UI",
+  "mermaid_font": "Segoe UI, Arial, sans-serif",
+  "out": "services_plugins",
+  "last": {
+    "direction": "LR",
+    "service": "",
+    "include_empty": false,
+    "edge_color": "#90A4AE",
+    "edge_width": 2.0,
+    "arrow_size": 2.0,
+    "loader_edge_color": "#B0BEC5",
+    "edge_label_color": "#455A64",
+    "font": "Segoe UI",
+    "font_size": 20,
+    "mermaid_font": "Segoe UI, Arial, sans-serif",
+    "out": "services_plugins"
+  },
+  "presets": {
+    "r": {
+      "direction": "LR",
+      "service": "",
+      "include_empty": false,
+      "edge_color": "#90A4AE",
+      "edge_width": 2.0,
+      "arrow_size": 2.0,
+      "loader_edge_color": "#B0BEC5",
+      "edge_label_color": "#455A64",
+      "font": "Segoe UI",
+      "font_size": 30,
+      "mermaid_font": "Segoe UI, Arial, sans-serif",
+      "out": "services_plugins"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "uploader_txt",
+  "kind": "plugin",
+  "folder": "uploader_txt",
+  "provider": "local",
+  "code": "app/plugins/uploader_txt/plugin.py",
+  "tasks": [
+    "upload_txt"
+  ],
+  "models": []
+}

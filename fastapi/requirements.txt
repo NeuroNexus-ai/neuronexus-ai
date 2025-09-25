@@ -45,5 +45,10 @@ pdfminer.six
 pypdf
 pytest
 requests
+PyMuPDF
+PyPDF2
+transformers
+librosa
+torchaudio
 
 

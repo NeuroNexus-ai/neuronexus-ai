@@ -1,0 +1,11 @@
+{
+  "name": "uploader_pdf",
+  "kind": "plugin",
+  "folder": "uploader_pdf",
+  "provider": "local",
+  "code": "app/plugins/uploader_pdf/plugin.py",
+  "tasks": [
+    "upload_pdf"
+  ],
+  "models": []
+}

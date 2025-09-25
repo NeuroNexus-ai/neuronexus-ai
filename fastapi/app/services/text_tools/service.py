@@ -1,49 +1,109 @@
-# app/plugins/text_tools/plugin.py
+# fastapi/app/services/text_tools/service.py
 from __future__ import annotations
-
-import re
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
+from app.services.base import BaseService
 
-from app.plugins.base import AIPlugin
+UPLOADS_ROOTS: tuple[Path, ...] = (
+    Path("fastapi") / "uploads",
+    Path("uploads"),
+    Path("app") / "uploads",
+    Path("data") / "uploads",
+)
 
+@dataclass
+class SaveOpts:
+    rel_path: str | None = None
+    dir: str | None = None
+    filename: str | None = None
+    append: bool = False
+    ensure_unique: bool = False
+    encoding: str = "utf-8"
+    newline: str | None = None
+    bom: bool = False
+    normalize: dict | None = None
 
-def _normalize_arabic(text: str) -> str:
-    # تبسيط (تطبيع) سريع: مسافات، همزات، مدود…
-    text = re.sub(r"\s+", " ", text).strip()
-    # مثال بسيط: تحويل التنوين/الألف المقصورة وغيرها ممكن توسيعها لاحقاً
-    text = text.replace("إ", "ا").replace("أ", "ا").replace("آ", "ا")
-    return text
+class Service(BaseService):
+    name = "text_tools"
+    tasks = ["save_text"]
 
+    def _uploads_base(self) -> Path:
+        for r in UPLOADS_ROOTS:
+            if r.exists():
+                return r
+        return UPLOADS_ROOTS[0]
 
-def _spellcheck_ar(text: str) -> str:
-    # مكان للتكامل مع تدقيق إملائي (qalsadi/pyarabic/gpt-قواعد…)
-    # حالياً: يرجع النص كما هو (stub)
-    return text
+    @staticmethod
+    def _sanitize_filename(name: str) -> str:
+        bad = '<>:"/\\|?*'
+        return "".join("_" if c in bad else c for c in name).strip()
 
+    @staticmethod
+    def _normalize_text(txt: str, opts: dict | None) -> str:
+        if not opts:
+            return txt
+        if opts.get("strip", True):
+            txt = txt.strip()
+        if opts.get("collapse_spaces", False):
+            txt = "\n".join(" ".join(line.split()) for line in txt.splitlines())
+        return txt
 
-class Plugin(AIPlugin):
-    tasks = ["arabic_normalize", "spellcheck_ar"]
+    @staticmethod
+    def _ensure_unique_path(p: Path) -> Path:
+        if not p.exists():
+            return p
+        stem, suf = p.stem, p.suffix
+        i = 1
+        while True:
+            cand = p.with_name(f"{stem}({i}){suf}")
+            if not cand.exists():
+                return cand
+            i += 1
 
-    def load(self) -> None:
-        self.name = "text_tools"
-
-    def infer(self, payload: dict[str, Any]) -> dict[str, Any]:
-        # يختار المهمة حسب الطلب
-        task = payload.get("task") or "arabic_normalize"
+    def save_text(self, payload: dict[str, Any]) -> dict[str, Any]:
+        if not isinstance(payload, dict):
+            return {"ok": False, "error": "payload must be an object"}
         text = payload.get("text")
+        if not isinstance(text, str):
+            return {"ok": False, "error": "text is required (string)"}
 
-        # دعم source_key (لو انبنى من orchestrator)
-        if text is None and "source_key" in payload:
-            # orchestrator يفكها قبل الوصول هنا عادة، ولكن هذا احتياط.
-            text = payload["source_key"]
+        opts = SaveOpts(
+            rel_path=payload.get("rel_path"),
+            dir=payload.get("dir"),
+            filename=payload.get("filename"),
+            append=bool(payload.get("append", False)),
+            ensure_unique=bool(payload.get("ensure_unique", False)),
+            encoding=str(payload.get("encoding", "utf-8")),
+            newline=payload.get("newline"),
+            bom=bool(payload.get("bom", False)),
+            normalize=payload.get("normalize"),
+        )
 
-        if not isinstance(text, str) or not text.strip():
-            return {"task": task, "error": "text is required", "text": text}
+        base = self._uploads_base()
+        if opts.rel_path:
+            out_path = (base / opts.rel_path).resolve()
+        else:
+            out_dir = base / (opts.dir or "text")
+            out_name = self._sanitize_filename(opts.filename or "output.txt")
+            out_path = (out_dir / out_name).resolve()
 
-        if task == "arabic_normalize":
-            out = _normalize_arabic(text)
-            return {"task": task, "text": out}
-        elif task == "spellcheck_ar":
-            out = _spellcheck_ar(text)
-            return {"task": task, "text": out}
-        return {"task": task, "error": f"Unknown task: {task}"}
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        if opts.ensure_unique and out_path.exists():
+            out_path = self._ensure_unique_path(out_path)
+
+        text = self._normalize_text(text, opts.normalize)
+        if opts.newline in {"\n", "\r\n"}:
+            text = text.replace("\r\n", "\n").replace("\r", "\n")
+            if opts.newline == "\r\n":
+                text = text.replace("\n", "\r\n")
+
+        mode = "ab" if opts.append else "wb"
+        data = text.encode(opts.encoding, errors="replace")
+        if (not opts.append) and opts.bom and opts.encoding.lower().replace("-", "") == "utf8":
+            data = b"\xef\xbb\xbf" + data
+
+        with open(out_path, mode) as f:
+            f.write(data)
+
+        return {"ok": True, "saved_to": str(out_path), "bytes_written": len(data)}

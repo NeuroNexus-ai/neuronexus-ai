@@ -1,0 +1,11 @@
+{
+  "name": "payload_maker",
+  "kind": "plugin",
+  "folder": "payload_maker",
+  "provider": "local",
+  "code": "app/plugins/payload_maker/plugin.py",
+  "tasks": [
+    "make_b64_payload"
+  ],
+  "models": []
+}

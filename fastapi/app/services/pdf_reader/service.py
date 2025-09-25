@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 
-from app.plugins.base import AIPlugin
+from app.services.base import BaseService
 
+try:
+    import fitz  # PyMuPDF
+except Exception:
+    fitz = None
 
 try:
     from PyPDF2 import PdfReader
@@ -12,67 +16,46 @@ except Exception:
     PdfReader = None
 
 
-class Plugin(AIPlugin):
+class Service(BaseService):
     name = "pdf_reader"
-    provider = "local"
     tasks = ["extract_text"]
 
-    def load(self) -> None:
-        # لا شيء مطلوب الآن
-        pass
+    def extract_text(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extract text from a PDF file located in the 'uploads/pdf' directory.
 
-    def infer(self, payload: dict[str, Any] | None = None) -> dict[str, Any]:
-        # مجرد stub لإرضاء الـ ABC
-        return {"ok": True, "service": self.name}
+        Args:
+            payload (Dict[str, Any]): A dictionary containing the key 'rel_path',
+                which is the relative path to the PDF file.
 
-    # ---- helpers ----
-    def _resolve_path(self, rel_path: str) -> Path:
-        p = Path(rel_path)
-        if p.is_file():
-            return p
-        candidates = [
-            Path("uploads") / rel_path,
-            Path("app") / "uploads" / rel_path,
-            Path("data") / "uploads" / rel_path,
-        ]
-        for q in candidates:
-            if q.is_file():
-                return q
-        # fallback
-        return Path("uploads") / rel_path
+        Returns:
+            Dict[str, Any]: A dictionary containing either the extracted text with 'ok': True,
+            or an error message with 'ok': False.
 
-    # ---- tasks ----
-    def extract_text(self, payload: dict[str, Any]) -> dict[str, Any]:
-        rel = (payload or {}).get("rel_path")
-        return_text = bool((payload or {}).get("return_text"))
-        if not rel:
+        Notes:
+            - Requires either PyMuPDF (fitz) or PyPDF2 to be installed.
+            - Returns an error if the file is not found or neither library is available.
+        """
+        rel_path = payload.get("rel_path")
+        if not rel_path:
             return {"ok": False, "error": "rel_path is required"}
 
-        path = self._resolve_path(rel)
-        if not path.exists():
-            return {"ok": False, "rel_path": rel, "error": f"file not found: {rel}"}
+        file_path = Path("uploads/pdf") / rel_path
+        if not file_path.is_file():
+            return {"ok": False, "error": f"File not found: {file_path}"}
 
-        out: dict[str, Any] = {"ok": True, "rel_path": rel}
-        pages = 0
+        if fitz is None and PdfReader is None:
+            return {"ok": False, "error": "Neither PyMuPDF nor PyPDF2 is installed."}
+
         text = ""
+        try:
+            if fitz:
+                doc = fitz.open(file_path)
+                text = "\n".join(page.get_text() for page in doc)
+            elif PdfReader:
+                reader = PdfReader(str(file_path))
+                text = "\n".join(page.extract_text() or "" for page in reader.pages)
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
 
-        if PdfReader is not None:
-            try:
-                with open(path, "rb") as f:
-                    reader = PdfReader(f)
-                    pages = len(reader.pages)
-                    if return_text:
-                        parts: list[str] = []
-                        for page in reader.pages:
-                            try:
-                                parts.append(page.extract_text() or "")
-                            except Exception:
-                                parts.append("")
-                        text = "\n".join(parts)
-            except Exception as e:
-                out["warning"] = f"PdfReader failed: {e!s}"
-
-        out["pages"] = pages
-        if return_text:
-            out["text"] = text
-        return out
+        return {"ok": True, "text": text}

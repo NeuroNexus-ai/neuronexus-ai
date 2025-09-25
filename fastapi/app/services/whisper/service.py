@@ -1,355 +1,357 @@
-# app/plugins/whisper/plugin.py
 from __future__ import annotations
 
+"""Whisper transcription service with flexible audio backends.
+
+This module provides a `Service` class for transcription/translation using
+OpenAI Whisper via Hugging Face `transformers`. It includes robust utilities to
+load audio from various sources (local path, relative path, URL, Base64),
+convert it to mono 16 kHz float32 samples using multiple optional backends, and
+run recognition either via a `pipeline` or directly with model/processor.
+
+All code is formatted to PEP 8, with English-only comments and docstrings.
+"""
+
+from pathlib import Path
 import base64
 import io
-from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-import numpy as np
-import requests
+import requests  # Lightweight and useful for fetching audio from URLs
 
-from app.core.config import get_settings
-from app.plugins.base import AIPlugin
+from app.services.base import BaseService
 
+# ======== Discovery & configuration shims (for wrapper generators) ========
+MODEL_ID = "openai/whisper-small"  # centralize model id
 
-# ============================
-# Globals (lazy-loaded once)
-# ============================
-_MODEL = None
-_PROCESSOR = None
-_PIPELINE = None  # optional: transformers pipeline for ASR
+# Some generators look for module-level tasks or a callable instead of class attrs
+TASKS = ["transcribe"]
 
-
-# ============================
-# Helpers
-# ============================
-def _safe_int(v: Any, default: int) -> int:
-    try:
-        return int(v)
-    except Exception:
-        return default
+def get_tasks() -> list[str]:
+    """Return available task identifiers (discovery shim)."""
+    return TASKS
 
 
-def _fetch_bytes_from_url(url: str, timeout: int = 30) -> bytes:
-    resp = requests.get(url, timeout=timeout)
-    resp.raise_for_status()
-    return resp.content
+# ========= Optional safe imports =========
+try:
+    import numpy as np
+except Exception:  # pragma: no cover - optional dependency
+    np = None  # type: ignore[assignment]
 
+# Try several audio packages; any one is sufficient.
+try:
+    import soundfile as sf  # type: ignore
+except Exception:  # pragma: no cover - optional dependency
+    sf = None  # type: ignore[assignment]
+
+try:
+    import librosa  # type: ignore
+except Exception:  # pragma: no cover - optional dependency
+    librosa = None  # type: ignore[assignment]
+
+try:
+    import torch  # type: ignore
+    import torchaudio  # type: ignore
+except Exception:  # pragma: no cover - optional dependency
+    torch = None  # type: ignore[assignment]
+    torchaudio = None  # type: ignore[assignment]
+
+# Optional transformers; prefer `pipeline`, then direct model/processor.
+try:
+    from transformers import (
+        AutoProcessor,
+        WhisperForConditionalGeneration,
+        pipeline,
+    )  # type: ignore
+except Exception:  # pragma: no cover - optional dependency
+    AutoProcessor = None  # type: ignore[assignment]
+    WhisperForConditionalGeneration = None  # type: ignore[assignment]
+    pipeline = None  # type: ignore[assignment]
+
+
+# ========= General helper utilities =========
 
 def _is_url(s: str) -> bool:
+    """Return True if *s* looks like an HTTP(S) URL."""
     try:
-        p = urlparse(str(s))
-        return p.scheme in ("http", "https")
+        parsed = urlparse(str(s))
+        return parsed.scheme in ("http", "https")
     except Exception:
         return False
 
 
+def _fetch_bytes_from_url(url: str, timeout: int = 30) -> bytes:
+    """Fetch raw bytes from a URL."""
+    response = requests.get(url, timeout=timeout)
+    response.raise_for_status()
+    return response.content
+
+
+def _ensure_numpy() -> None:
+    """Ensure NumPy is available, otherwise raise a runtime error."""
+    if np is None:  # type: ignore[truthy-bool]
+        raise RuntimeError("numpy not installed")
+
+
+# ========= Load audio to mono@16k =========
+
 def _load_audio_mono16k(audio_bytes: bytes) -> tuple[list[float], int]:
-    """
-    Load audio from bytes into a mono 16k waveform (float32 list) and return (samples, sample_rate).
-    Prefer soundfile or librosa if available; otherwise try torchaudio.
+    """Convert arbitrary audio bytes to mono float32 samples at 16 kHz."""
+    # soundfile (+ librosa for resampling)
+    if sf is not None:
+        try:
+            with io.BytesIO(audio_bytes) as bio:
+                data, sr = sf.read(bio, dtype="float32", always_2d=False)
 
-    Returns:
-        (samples, 16000)
-    Raises:
-        RuntimeError if no supported backend is available.
-    """
-    # Try soundfile
-    try:
-        import soundfile as sf
+            # Ensure mono: average channels if needed.
+            if getattr(data, "ndim", 1) > 1:
+                try:
+                    import numpy as _np
+                    if data.ndim == 2:
+                        if data.shape[0] < data.shape[1]:
+                            data = data.mean(axis=0)
+                        else:
+                            data = data.mean(axis=1)
+                    else:
+                        data = data.squeeze()
+                except Exception:
+                    data = data.mean(axis=0) if hasattr(data, "mean") else data
 
-        with io.BytesIO(audio_bytes) as bio:
-            data, sr = sf.read(bio, dtype="float32", always_2d=False)
-        # Convert to mono
-
-        if data.ndim > 1:
-            data = data.mean(axis=1)
-        # Resample if needed
-        if sr != 16000:
-            try:
-                import librosa
-
-                data = librosa.resample(y=data, orig_sr=sr, target_sr=16000)
-                sr = 16000
-            except Exception:
-                # Fallback: simple naive resample (not ideal)
-
-                ratio = 16000 / float(sr)
-                new_len = int(round(len(data) * ratio))
-                if new_len > 1:
-                    # linear interpolation
-                    x_old = np.linspace(0, 1, num=len(data), endpoint=False)
-                    x_new = np.linspace(0, 1, num=new_len, endpoint=False)
-                    data = np.interp(x_new, x_old, data).astype("float32")
+            # Resample to 16 kHz.
+            if sr != 16000:
+                if librosa is not None:
+                    data = librosa.resample(y=data, orig_sr=sr, target_sr=16000)
                     sr = 16000
-        return data.tolist(), 16000
-    except Exception:
-        pass
+                else:
+                    _ensure_numpy()
+                    ratio = 16000 / float(sr)
+                    new_len = int(round(len(data) * ratio))
+                    if new_len > 1:
+                        x_old = np.linspace(0, 1, num=len(data), endpoint=False)
+                        x_new = np.linspace(0, 1, num=new_len, endpoint=False)
+                        data = np.interp(x_new, x_old, data).astype("float32")
+                        sr = 16000
 
-    # Try librosa directly
-    try:
-        import librosa
+            return (data.tolist(), 16000)
+        except Exception:
+            pass
 
-        y, sr = librosa.load(io.BytesIO(audio_bytes), sr=16000, mono=True)
-        y = y.astype("float32")
-        return y.tolist(), 16000
-    except Exception:
-        pass
+    # librosa directly
+    if librosa is not None:
+        try:
+            y, _sr = librosa.load(io.BytesIO(audio_bytes), sr=16000, mono=True)
+            return (y.astype("float32").tolist(), 16000)
+        except Exception:
+            pass
 
-    # Try torchaudio
-    try:
-        import torch
-        import torchaudio
+    # torchaudio
+    if (torch is not None) and (torchaudio is not None):
+        try:
+            with io.BytesIO(audio_bytes) as bio:
+                wav, sr = torchaudio.load(bio)  # [C, T]
 
-        with io.BytesIO(audio_bytes) as bio:
-            wav, sr = torchaudio.load(bio)  # [channels, time]
-        if wav.dim() == 2 and wav.size(0) > 1:
-            wav = wav.mean(dim=0, keepdim=True)
-        wav = wav.squeeze(0)  # [time]
-        # Resample if needed
-        if sr != 16000:
-            resampler = torchaudio.transforms.Resample(sr, 16000)
-            wav = resampler(wav)
-            sr = 16000
-        return wav.to(dtype=torch.float32).cpu().numpy().tolist(), 16000
-    except Exception:
-        pass
+            if wav.dim() == 2 and wav.size(0) > 1:
+                wav = wav.mean(dim=0, keepdim=True)
 
-    raise RuntimeError("Failed to load audio. Please install one of: soundfile, librosa, or torchaudio.")
+            wav = wav.squeeze(0)
+
+            if sr != 16000:
+                wav = torchaudio.transforms.Resample(sr, 16000)(wav)
+                sr = 16000
+
+            _ensure_numpy()
+            return (
+                wav.to(dtype=torch.float32).cpu().numpy().tolist(),
+                16000,
+            )
+        except Exception:
+            pass
+
+    raise RuntimeError(
+        "No audio backend available. Install one of: soundfile, librosa, or torchaudio."
+    )
 
 
 def _read_audio_from_payload(payload: dict[str, Any]) -> tuple[list[float], int]:
-    """
-    Accepts:
-      - rel_path: relative path under UPLOAD_DIR (e.g., 'audio/sample.wav')
-      - path: absolute or relative (prefer rel_path)
-      - url: http(s) url
-      - base64: base64-encoded audio (raw file)
-    Returns mono 16k samples as float list and sample rate (16000).
-    """
-    settings = get_settings()
-    # 1) rel_path under uploads/
+    """Read audio contents from the given payload and convert to mono 16 kHz."""
     rel_path = payload.get("rel_path")
     if rel_path:
-        p = (Path(settings.UPLOAD_DIR) / rel_path).resolve()
+        p = Path("uploads") / str(rel_path)
+        if not p.is_file():
+            p = Path("uploads") / Path(str(rel_path))
+        p = p.resolve()
         if not p.is_file():
             raise FileNotFoundError(f"Audio file not found: {p}")
-        data = p.read_bytes()
-        return _load_audio_mono16k(data)
+        return _load_audio_mono16k(p.read_bytes())
 
-    # 2) explicit path
     path = payload.get("path")
     if path and not _is_url(str(path)):
-        p = Path(path).expanduser().resolve()
+        p = Path(str(path)).expanduser().resolve()
         if not p.is_file():
             raise FileNotFoundError(f"Audio file not found: {p}")
-        data = p.read_bytes()
-        return _load_audio_mono16k(data)
+        return _load_audio_mono16k(p.read_bytes())
 
-    # 3) url
     url = payload.get("url")
     if url and _is_url(str(url)):
-        data = _fetch_bytes_from_url(str(url))
-        return _load_audio_mono16k(data)
+        return _load_audio_mono16k(_fetch_bytes_from_url(str(url)))
 
-    # 4) base64
     b64 = payload.get("base64")
     if b64:
-        # if dict with "data", support that too
         if isinstance(b64, dict):
             b64 = b64.get("data")
-        data = base64.b64decode(str(b64))
-        return _load_audio_mono16k(data)
+        return _load_audio_mono16k(base64.b64decode(str(b64)))
 
-    raise ValueError("No audio source provided (rel_path | path | url | base64).")
+    raise ValueError("Provide one of: rel_path | path | url | base64")
 
 
-# ============================
-# Plugin implementation
-# ============================
-class Plugin(AIPlugin):
-    """
-    Whisper ASR plugin.
+# ========= Whisper Service =========
 
-    Tasks:
-      - transcribe:  {rel_path|url|base64}[, language, task, return_segments, translate]
-                     -> {'text', 'language', 'segments?[]', 'duration?'}
-    """
+class Service(BaseService):
+    """Whisper service wrapping `transformers` ASR/translation."""
 
     name = "whisper"
     tasks = ["transcribe"]
 
-    # Let the dynamic prefetcher know the required huggingface model
-    REQUIRED_MODELS = [{"type": "hf", "id": "openai/whisper-small"}]
+    _MODEL = None
+    _PROCESSOR = None
+    _PIPELINE = None
+
+    def load(self) -> None:
+        return
 
     def _ensure_loaded(self) -> None:
-        global _MODEL, _PROCESSOR, _PIPELINE
-        if _MODEL is not None and _PROCESSOR is not None:
+        if (
+            self._PIPELINE is not None
+            or (self._MODEL is not None and self._PROCESSOR is not None)
+        ):
             return
 
-        # Lazily import heavy deps
-        from transformers import (
-            AutoProcessor,
-            WhisperForConditionalGeneration,
-            pipeline,
-        )
+        if pipeline is not None and AutoProcessor is not None:
+            try:
+                proc = AutoProcessor.from_pretrained(MODEL_ID)
+                self._PIPELINE = pipeline(
+                    "automatic-speech-recognition",
+                    model=MODEL_ID,
+                    tokenizer=proc.tokenizer,
+                    feature_extractor=proc.feature_extractor,
+                    device_map="auto",
+                )
+                return
+            except Exception:
+                self._PIPELINE = None
 
-        model_id = "openai/whisper-small"
-        _PROCESSOR = AutoProcessor.from_pretrained(model_id)
-        _MODEL = WhisperForConditionalGeneration.from_pretrained(model_id)
+        if AutoProcessor is not None and WhisperForConditionalGeneration is not None:
+            try:
+                self._PROCESSOR = AutoProcessor.from_pretrained(MODEL_ID)
+                self._MODEL = WhisperForConditionalGeneration.from_pretrained(MODEL_ID)
+            except Exception:
+                self._PROCESSOR = None
+                self._MODEL = None
 
-        # Optional pipeline (can be handy for simple usage)
-        # Note: device_map="auto" will place on CUDA if available
-        try:
-            _PIPELINE = pipeline(
-                "automatic-speech-recognition",
-                model=_MODEL,
-                tokenizer=_PROCESSOR.tokenizer,
-                feature_extractor=_PROCESSOR.feature_extractor,
-                device_map="auto",
-            )
-        except Exception:
-            _PIPELINE = None
-
-    # Optional prefetch hook (used by dynamic prefetch script)
-    def prefetch(self) -> None:
-        try:
-            from transformers import AutoProcessor, WhisperForConditionalGeneration
-
-            _ = AutoProcessor.from_pretrained("openai/whisper-small")
-            _ = WhisperForConditionalGeneration.from_pretrained("openai/whisper-small")
-        except Exception:
-            # leave fallback to REQUIRED_MODELS in prefetch script
-            pass
-
-    # Legacy method required by AIPlugin; not used directly here
-    def load(self) -> None:
-        self._ensure_loaded()
-
-    def infer(self, payload: dict[str, Any]) -> dict[str, Any]:
-        # Fallback to transcribe for legacy compatibility
-        return self.transcribe(payload)
-
-    # ============================
-    # Task: /plugins/whisper/transcribe
-    # ============================
     def transcribe(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """
-        Parameters (payload):
-          - rel_path | path | url | base64 : audio source (required)
-          - language: explicit language code (e.g., 'ar', 'en'); if None -> auto detect
-          - task: 'transcribe' (default) or 'translate' (force English)
-          - translate: bool, shortcut for task='translate'
-          - return_segments: bool, default False
-          - chunk_length_s: float (pipeline-only)
-          - stride_length_s: float (pipeline-only)
-        """
-        self._ensure_loaded()
+        """Transcribe or translate audio using Whisper."""
+        if np is None:  # type: ignore[truthy-bool]
+            return {"ok": False, "error": "numpy not installed"}
 
-        # Read audio -> mono float32 @16k
-        samples, sr = _read_audio_from_payload(payload)
+        try:
+            samples, sr = _read_audio_from_payload(payload or {})
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
 
-        # Controls
-        want_segments = bool(payload.get("return_segments", False))
+        return_segments = bool(payload.get("return_segments", False))
         explicit_lang = payload.get("language")
+
         task = (payload.get("task") or "").strip().lower()
         if task not in ("", "transcribe", "translate"):
             task = "transcribe"
-
-        # boolean translate flag overrides task
         if str(payload.get("translate", "")).lower() in ("1", "true", "yes"):
             task = "translate"
 
-        # Try pipeline first (simple & robust)
-        if _PIPELINE is not None:
-            pipe_kwargs: dict[str, Any] = {
-                "return_timestamps": "word" if want_segments else False,
-            }
+        self._ensure_loaded()
 
-            # chunk/stride controls (optional)
-            cls = payload.get("chunk_length_s")
-            sls = payload.get("stride_length_s")
-            if cls is not None:
-                pipe_kwargs["chunk_length_s"] = float(cls)
-            if sls is not None:
-                pipe_kwargs["stride_length_s"] = float(sls)
-
-            # task & language
-            if explicit_lang:
-                pipe_kwargs["generate_kwargs"] = {
-                    "language": explicit_lang,
-                    "task": task or "transcribe",
+        if self._PIPELINE is not None:
+            try:
+                pipe_kwargs: dict[str, Any] = {
+                    "return_timestamps": "word" if return_segments else False
                 }
-            elif task:
-                pipe_kwargs["generate_kwargs"] = {"task": task}
+                if payload.get("chunk_length_s") is not None:
+                    pipe_kwargs["chunk_length_s"] = float(payload["chunk_length_s"])
+                if payload.get("stride_length_s") is not None:
+                    pipe_kwargs["stride_length_s"] = float(payload["stride_length_s"])
 
-            # Run
-            audio_np = np.asarray(samples, dtype="float32")
-            out = _PIPELINE(audio_np, **pipe_kwargs)
+                if explicit_lang:
+                    pipe_kwargs["generate_kwargs"] = {
+                        "language": explicit_lang,
+                        "task": task or "transcribe",
+                    }
+                elif task:
+                    pipe_kwargs["generate_kwargs"] = {"task": task}
 
-            # Standardize output
-            text = out["text"] if isinstance(out, dict) and "text" in out else str(out)
-            language = out.get("language") if isinstance(out, dict) else explicit_lang or None
-            result: dict[str, Any] = {
-                "ok": True,
-                "text": text,
-                "language": language,
-                "sample_rate": sr,
+                audio_np = np.asarray(samples, dtype="float32")  # type: ignore[attr-defined]
+                out = self._PIPELINE(audio_np, **pipe_kwargs)
+
+                text = (
+                    out.get("text") if isinstance(out, dict) and "text" in out else str(out)
+                )
+                language = (
+                    out.get("language") if isinstance(out, dict) else explicit_lang or None
+                )
+                result: dict[str, Any] = {
+                    "ok": True,
+                    "text": text,
+                    "language": language,
+                    "sample_rate": sr,
+                }
+
+                if return_segments:
+                    segments = []
+                    if (
+                        isinstance(out, dict)
+                        and "chunks" in out
+                        and isinstance(out["chunks"], list)
+                    ):
+                        for ch in out["chunks"]:
+                            segments.append(
+                                {
+                                    "text": ch.get("text"),
+                                    "timestamp": ch.get("timestamp"),
+                                }
+                            )
+                    result["segments"] = segments
+
+                return result
+            except Exception:
+                pass
+
+        if self._MODEL is None or self._PROCESSOR is None or AutoProcessor is None:
+            return {
+                "ok": False,
+                "error": "transformers not available (pipeline/model/processor)",
             }
 
-            # Timestamps/segments (if available)
-            if want_segments:
-                # Some pipeline versions return 'chunks' or 'segments'
-                segs = []
-                if isinstance(out, dict) and "chunks" in out and isinstance(out["chunks"], list):
-                    for ch in out["chunks"]:
-                        segs.append(
-                            {
-                                "text": ch.get("text"),
-                                "timestamp": ch.get("timestamp"),
-                            }
-                        )
-                result["segments"] = segs
-
-            return result
-
-        # Fallback: manual generate() with processor+model
-        from transformers import GenerationConfig
-
-        audio_np = np.asarray(samples, dtype="float32")
-        inputs = _PROCESSOR.feature_extractor(audio_np, sampling_rate=sr, return_tensors="pt")
-        input_features = inputs.input_features.to(_MODEL.device)
-
-        gen_kwargs = {}
-        if explicit_lang:
-            gen_kwargs["language"] = explicit_lang
-        if task in ("transcribe", "translate"):
-            gen_kwargs["task"] = task
-
-        # Some versions use forced_decoder_ids via processor.get_decoder_prompt_ids
         try:
-            forced_ids = _PROCESSOR.get_decoder_prompt_ids(
-                language=explicit_lang if explicit_lang else None,
-                task=task if task else "transcribe",
+            feats = self._PROCESSOR.feature_extractor(  # type: ignore[union-attr]
+                np.asarray(samples, dtype="float32"),  # type: ignore[attr-defined]
+                sampling_rate=sr,
+                return_tensors="pt",
             )
-            generation_config = GenerationConfig.forced_decoder_ids_for_generation(forced_ids)
-        except Exception:
-            generation_config = None
+            input_features = feats.input_features
 
-        with _MODEL.eval():
-            pred_ids = _MODEL.generate(
+            gen_kwargs: dict[str, Any] = {}
+            if explicit_lang:
+                gen_kwargs["language"] = explicit_lang
+            if task in ("transcribe", "translate"):
+                gen_kwargs["task"] = task
+
+            self._MODEL.eval()  # type: ignore[union-attr]
+            pred_ids = self._MODEL.generate(  # type: ignore[union-attr]
                 input_features,
-                generation_config=generation_config,
-                max_new_tokens=_safe_int(payload.get("max_new_tokens", 448), 448),
-                num_beams=_safe_int(payload.get("num_beams", 1), 1),
+                max_new_tokens=int(payload.get("max_new_tokens", 448)),
+                num_beams=int(payload.get("num_beams", 1)),
             )
-
-        text = _PROCESSOR.tokenizer.batch_decode(pred_ids, skip_special_tokens=True)[0]
-        return {
-            "ok": True,
-            "text": text,
-            "language": explicit_lang,  # language detection not provided in this fallback
-            "sample_rate": sr,
-        }
+            text = self._PROCESSOR.tokenizer.batch_decode(  # type: ignore[union-attr]
+                pred_ids, skip_special_tokens=True
+            )[0]
+            return {"ok": True, "text": text, "language": explicit_lang, "sample_rate": sr}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}

@@ -1,0 +1,11 @@
+{
+  "name": "uploader_video",
+  "kind": "plugin",
+  "folder": "uploader_video",
+  "provider": "local",
+  "code": "app/plugins/uploader_video/plugin.py",
+  "tasks": [
+    "upload_video"
+  ],
+  "models": []
+}

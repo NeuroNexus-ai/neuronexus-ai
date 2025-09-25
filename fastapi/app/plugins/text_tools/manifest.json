@@ -5,8 +5,7 @@
   "provider": "local",
   "code": "app/plugins/text_tools/plugin.py",
   "tasks": [
-    "arabic_normalize",
-    "spellcheck_ar"
+    "save_text"
   ],
   "models": []
 }

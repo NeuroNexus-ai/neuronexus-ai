@@ -72,7 +72,7 @@ API = {
     "workdir": ROOT / "fastapi",
     "cmd": [
         str((ROOT / "fastapi" / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python"))),
-        "-m", "uvicorn", "app.main:app",
+        "-m", "uvicorn", "main:app", "--app-dir", "app",   # <<< مهم: بدل app.main:app
         "--host", "0.0.0.0", "--port", "8000", "--log-level", "debug"
     ],
     "health_urls": [
@@ -145,6 +145,25 @@ def _wait_for_health(urls: list[str], timeout_s: int, interval_s: float) -> tupl
     raise RuntimeError(f"Healthcheck timed out. Last error: {last_err}")
 
 
+def _env_with_paths(svc: dict) -> dict:
+    """Return env with PYTHONPATH including service workdir and its /app."""
+    env = dict(os.environ)
+    extra = [
+        str(svc["workdir"]),              # e.g. fastapi/
+        str(Path(svc["workdir"]) / "app") # e.g. fastapi/app
+    ]
+    current = env.get("PYTHONPATH", "")
+    parts = [p for p in (extra + (current.split(os.pathsep) if current else [])) if p]
+    # dedupe while preserving order
+    seen = set()
+    merged = []
+    for p in parts:
+        if p not in seen:
+            merged.append(p); seen.add(p)
+    env["PYTHONPATH"] = os.pathsep.join(merged)
+    return env
+
+
 def _stream_output(proc: subprocess.Popen, tag: str, color: str):
     """Stream output from a subprocess with tagging and color."""
     prefix = f"{color}[{tag}]{C.RESET}"
@@ -170,9 +189,13 @@ def _start_service(svc: dict) -> tuple[subprocess.Popen, str, float]:
     color = svc.get("color", C.WHITE)
     cmd_pretty = " ".join(map(str, svc["cmd"]))
     print(f"{color}[{svc['tag']}] Starting:{C.RESET} {cmd_pretty} {C.DIM}(cwd={svc['workdir']}){C.RESET}")
+
+    env = _env_with_paths(svc)  # <<< يضيف PYTHONPATH لكل خدمة
+
     proc = subprocess.Popen(
         svc["cmd"],
         cwd=str(svc["workdir"]),
+        env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         bufsize=1,
@@ -247,17 +270,6 @@ def main():
     browser to the LAN URL once, prints an access table and boot times, and
     keeps the process alive until any child exits or the user interrupts with
     CTRL+C.
-
-    Returns:
-        None: This function is a top-level entry point and has no return value.
-
-    Notes:
-        - Relies on global configuration dictionaries ``API`` and ``UI`` and
-          color helper ``C``.
-        - Uses helper functions: ``_print_banner()``, ``_lan_ip()``,
-          ``_start_service()``, ``_open_browser()``, ``_services_table()``,
-          ``_graceful_terminate()``.
-        - Does not modify service logic; only coordinates process lifecycle.
     """
     _print_banner()
 
@@ -331,7 +343,7 @@ def main():
 
     except KeyboardInterrupt:
         pass
-    except Exception as e:  # noqa: BLE001 - bubble up message to stderr
+    except Exception as e:  # bubble up message to stderr
         print(f"{C.RED}Startup failed:{C.RESET} {e}", file=sys.stderr)
     finally:
         _graceful_terminate(procs)
