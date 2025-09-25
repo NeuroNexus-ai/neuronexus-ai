@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 SERVICES_DIR = ROOT / "app" / "services"
 PLUGINS_DIR = ROOT / "app" / "plugins"
 
@@ -190,9 +192,9 @@ def main() -> None:
         any_created = any_created or created
 
     if any_created:
-        print("Recreation complete ✅")
+        print("Recreation complete")
     else:
-        print("Nothing generated. (No tasks discovered or filtered by --only) ⚠️")
+        print("Nothing generated. (No tasks discovered or filtered by --only)")
 
 
 if __name__ == "__main__":

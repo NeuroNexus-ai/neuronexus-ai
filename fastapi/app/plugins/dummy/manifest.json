@@ -5,7 +5,11 @@
   "provider": "local",
   "code": "app/plugins/dummy/plugin.py",
   "tasks": [
-    "ping"
+    "ping",
+    "echo"
   ],
-  "models": []
+  "models": [],
+  "diagram": {
+    "mmd": "diagram/arch_dummy.mmd"
+  }
 }

@@ -1,0 +1,19 @@
+%%{init: {'themeVariables': { 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '18px' } } }%%
+flowchart LR
+classDef PL fill:#90CAF9,stroke:#424242,stroke-width:1px
+classDef SV fill:#FFCC80,stroke:#424242,stroke-width:1px
+classDef DEC fill:#ECEFF1,stroke:#90A4AE,stroke-width:1px
+U[User]
+R((API Router))
+L[(Loader)]
+class U,R,L DEC
+subgraph Plugins
+P_uploader_video["uploader_video\n(upload_video)"]:::PL
+end
+subgraph Services
+S_uploader_video["uploader_video\n(upload_video)"]:::SV
+end
+U -- request --> R
+R -- dispatch --> S_uploader_video
+S_uploader_video -- load --> L
+S_uploader_video -- uses --> P_uploader_video

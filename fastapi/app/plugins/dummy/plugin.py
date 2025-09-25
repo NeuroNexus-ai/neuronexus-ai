@@ -5,14 +5,14 @@ from app.plugins.base import AIPlugin
 
 class Plugin(AIPlugin):
     name = "dummy"
-    tasks = ['ping']
+    tasks = ['ping', 'echo']
     provider = "local"
     _impl = None  # instance of app.services.dummy.service.Service
 
     def __init__(self) -> None:
         self.name = "dummy"
         # نثبت المهام المتولدة كقائمة قابلة للتعديل محليًا
-        self.tasks = list(['ping'])
+        self.tasks = list(['ping', 'echo'])
 
     def load(self) -> None:
         if self._impl is None:

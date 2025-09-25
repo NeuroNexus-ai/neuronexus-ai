@@ -7,5 +7,8 @@
   "tasks": [
     "make_b64_payload"
   ],
-  "models": []
+  "models": [],
+  "diagram": {
+    "mmd": "diagram/arch_payload_maker.mmd"
+  }
 }

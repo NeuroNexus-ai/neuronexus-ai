@@ -1,0 +1,19 @@
+%%{init: {'themeVariables': { 'fontFamily': 'Segoe UI, Arial, sans-serif', 'fontSize': '18px' } } }%%
+flowchart LR
+classDef PL fill:#90CAF9,stroke:#424242,stroke-width:1px
+classDef SV fill:#FFCC80,stroke:#424242,stroke-width:1px
+classDef DEC fill:#ECEFF1,stroke:#90A4AE,stroke-width:1px
+U[User]
+R((API Router))
+L[(Loader)]
+class U,R,L DEC
+subgraph Plugins
+P_uploader_audio["uploader_audio\n(upload_audio)"]:::PL
+end
+subgraph Services
+S_uploader_audio["uploader_audio\n(upload_audio)"]:::SV
+end
+U -- request --> R
+R -- dispatch --> S_uploader_audio
+S_uploader_audio -- load --> L
+S_uploader_audio -- uses --> P_uploader_audio
