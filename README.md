@@ -109,7 +109,6 @@ neuronexus-ai/
 
 ```powershell
 # 1) Clone
-# 1) Clone
 git clone https://github.com/NeuroNexus-ai/neuronexus-ai.git
 cd neuronexus-ai
 
