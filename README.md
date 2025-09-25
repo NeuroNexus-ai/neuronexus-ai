@@ -109,6 +109,7 @@ neuronexus-ai/
 
 ```powershell
 # 1) Clone
+# 1) Clone
 git clone https://github.com/NeuroNexus-ai/neuronexus-ai.git
 cd neuronexus-ai
 
@@ -132,8 +133,7 @@ cd neuronexus-ai
 python3 tools/rs.py bootstrap
 
 # 3) Run
-python -m run_all
-
+python3 -m run_all
 ```
 
 ---
