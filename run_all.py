@@ -72,7 +72,7 @@ API = {
     "workdir": ROOT / "fastapi",
     "cmd": [
         str((ROOT / "fastapi" / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python"))),
-        "-m", "uvicorn", "main:app", "--app-dir", "app",   # <<< مهم: بدل app.main:app
+        "-m", "uvicorn", "app.main:app",   
         "--host", "0.0.0.0", "--port", "8000", "--log-level", "debug"
     ],
     "health_urls": [
