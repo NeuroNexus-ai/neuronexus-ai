@@ -49,9 +49,9 @@ The idea is to implement them **gradually** and **under control**.
 Each type can be toggled via environment variables:
 
 ```env
-ENABLE_SELF_SIGNUP=true
-ENABLE_INVITES=true
-ENABLE_SSO=true
+APP_ENABLE_SELF_SIGNUP=true
+APP_ENABLE_INVITES=true
+APP_ENABLE_SSO=true
 ```
 
 Authorization is enforced through **Role-Based Access Control (RBAC)** to define which users can access which features.
@@ -72,9 +72,4 @@ The **Auth** tab in the UI shows the following (based on configuration):
 
 ## ✅ Summary
 
-- All user management models can coexist in the same project.  
-- The key is **config flags + RBAC permissions**.  
-- Suggested roadmap:
-  1. Start simple with **Bootstrap + Admin-Provisioned**.  
-  2. Add **Self-Sign-Up + Invites** when needed.  
-  3. Enable **SSO** as the user base grows or clients request it.  
+
