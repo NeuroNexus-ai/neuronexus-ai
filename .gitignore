@@ -25,6 +25,7 @@ venv.bak/
 .pdm-python
 .pdm-build/
 __pypackages__/
+.venv.tools/
 
 # =========================
 # 📦 Package/Build Artifacts

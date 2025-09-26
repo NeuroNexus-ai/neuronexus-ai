@@ -1,27 +1,43 @@
 {
+  "project": "NeuroNexus-AI",
   "services": {
     "api": {
       "cwd": "fastapi",
       "python_exe": "fastapi/.venv/bin/python",
       "cmd": [
-        "-m", "uvicorn",
+        "-m",
+        "uvicorn",
         "app.main:app",
-        "--host", "127.0.0.1",
-        "--port", "8000",
-        "--log-level", "debug"
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000",
+        "--log-level",
+        "debug"
       ],
-      "health": "http://127.0.0.1:8000/docs",
+      "health": [
+        "http://127.0.0.1:8000/health",
+        "http://127.0.0.1:8000/docs"
+      ],
       "health_timeout": 180
     },
     "streamlit": {
       "cwd": "streamlit",
       "python_exe": "streamlit/.venv/bin/python",
       "cmd": [
-        "-m", "streamlit", "run", "app.py",
-        "--server.address", "127.0.0.1",
-        "--server.port", "8501"
+        "-m",
+        "streamlit",
+        "run",
+        "app.py",
+        "--server.address",
+        "0.0.0.0",
+        "--server.port",
+        "8501"
       ],
-      "health": "http://127.0.0.1:8501/_stcore/health"
+      "health": [
+        "http://127.0.0.1:8501/_stcore/health",
+        "http://127.0.0.1:8501"
+      ]
     }
   }
 }

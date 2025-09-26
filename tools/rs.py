@@ -15,13 +15,11 @@ PY_EXE = TOOLS_VENV / ("Scripts/python.exe" if os.name == "nt" else "bin/python"
 REQS = ROOT / "requirements-tools.txt"
 SERVERS_JSON = ROOT / "servers.json"
 
-def is_windows() -> bool:
-    """Check if the current operating system is Windows.
 
-    Returns:
-        bool: True if the OS is Windows, False otherwise.
-    """
+def is_windows() -> bool:
+    """Check if the current operating system is Windows."""
     return os.name == "nt"
+
 
 def ensure_tools_venv() -> None:
     """Ensure the virtual environment for tools is created and dependencies are installed."""
@@ -33,28 +31,27 @@ def ensure_tools_venv() -> None:
     subprocess.check_call([str(PY_EXE), "-m", "pip", "install", "-U", "pip"])
     subprocess.check_call([str(PY_EXE), "-m", "pip", "install", "-r", str(REQS)])
 
-def servers_payload() -> dict:
-    """Generate payload for FastAPI and Streamlit services.
 
-    Returns:
-        dict: Dictionary describing services configuration.
-    """
+def servers_payload() -> dict:
     py_api = "fastapi/.venv/Scripts/python.exe" if is_windows() else "fastapi/.venv/bin/python"
-    py_ui = "streamlit/.venv/Scripts/python.exe" if is_windows() else "streamlit/.venv/bin/python"
+    py_ui  = "streamlit/.venv/Scripts/python.exe" if is_windows() else "streamlit/.venv/bin/python"
 
     return {
+        "project": "NeuroNexus-AI",
         "services": {
             "api": {
                 "cwd": "fastapi",
                 "python_exe": py_api,
                 "cmd": [
-                    "-m", "uvicorn",
-                    "app.main:app",
+                    "-m", "uvicorn", "app.main:app",
                     "--host", "127.0.0.1",
                     "--port", "8000",
                     "--log-level", "debug"
                 ],
-                "health": "http://127.0.0.1:8000/docs",
+                "health": [
+                    "http://127.0.0.1:8000/health",
+                    "http://127.0.0.1:8000/docs"
+                ],
                 "health_timeout": 180
             },
             "streamlit": {
@@ -62,23 +59,22 @@ def servers_payload() -> dict:
                 "python_exe": py_ui,
                 "cmd": [
                     "-m", "streamlit", "run", "app.py",
-                    "--server.address", "127.0.0.1",
-                    "--server.port", "8501"
+                    "--server.address", "0.0.0.0",   # <- مهم: بدل 127.0.0.1
+                    "--server.port", "8501",
+                    "--server.headless", "true"
                 ],
-                "health": "http://127.0.0.1:8501/_stcore/health",
-                "exports": {
-                    "url": "http://127.0.0.1:8501"
-                }
+                "health": [
+                    "http://127.0.0.1:8501/_stcore/health",
+                    "http://127.0.0.1:8501"
+                ]
             }
         }
     }
 
-def write_servers_json(force: bool = False) -> None:
-    """Write or overwrite the servers.json file.
 
-    Args:
-        force (bool): Whether to overwrite the existing file. Defaults to False.
-    """
+
+def write_servers_json(force: bool = False) -> None:
+    """Write or overwrite the servers.json file."""
     if SERVERS_JSON.exists() and not force:
         print(f"[servers] exists: {SERVERS_JSON} (skip). Use --force to overwrite.")
         return
@@ -91,16 +87,12 @@ def write_servers_json(force: bool = False) -> None:
     SERVERS_JSON.write_text(json.dumps(data, indent=2), encoding="utf-8")
     print(f"[servers] written -> {SERVERS_JSON}")
 
-def main() -> int:
-    """Main entry point for the script.
 
-    Returns:
-        int: Exit code.
-    """
+def main() -> int:
+    """Main entry point for the script."""
     ensure_tools_venv()
     argv = sys.argv[1:]
 
-    # 1) bootstrap: builds envs via script and generates servers.json if missing
     if argv[:1] == ["bootstrap"]:
         script = ROOT / "tools" / "bootstrap_envs.py"
         code = subprocess.call([str(PY_EXE), str(script), *argv[1:]])
@@ -109,15 +101,14 @@ def main() -> int:
         write_servers_json(force=False)
         return 0
 
-    # 2) servers: creates/replaces servers.json depending on OS
     if argv[:1] == ["servers"]:
         force = "--force" in argv
         write_servers_json(force=force)
         return 0
 
-    # 3) other reposmith commands (optional)
     cmd = [str(PY_EXE), "-m", "reposmith_tol", *argv]
     return subprocess.call(cmd)
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
