@@ -9,6 +9,7 @@
 - [Demo](#-demo)
 - [Features](#-features)
 - [Architecture](#-architecture)
+- [Documentation](#-documentation)   
 - [Quick Setup](#-quick-setup)
 - [Run with Orchestrator](#-run-with-orchestrator)
 - [Streamlit Dashboard](#-streamlit-dashboard)
@@ -21,6 +22,7 @@
 - [Roadmap](#-roadmap)
 - [License](#-license)
 - [Community & Membership](#-community--membership)
+
 
 ---
 
@@ -86,20 +88,28 @@ It provides:
 ## 🧱 Architecture
 ```text
 neuronexus-ai/
-├── fastapi/          # FastAPI backend
+├── fastapi/          # الـ API
 │   ├── app/
-│   │   ├── api/      # Routers (auth, inference, uploads, plugins, services, workflows)
-│   │   ├── plugins/  # Plugins (dummy, pdf_reader, whisper, ...)
-│   │   ├── services/ # Services (parallel to plugins)
-│   │   ├── workflows/# Orchestrator + registry
-│   │   └── core/     # Config, errors, logging, path utils
-│   └── tools/        # Diagram generators, plugin wrapper scripts
-├── streamlit/        # Streamlit Dashboard (UI)
-│   ├── core/         # API calls, state, storage
-│   └── ui/           # Sidebar + tabs (inference, uploads, workflows, etc.)
-└── uploads/          # User uploads (pdf, audio, video, images, txt)
+│   │   ├── api/      # نقاط النهاية (auth, inference, uploads…)
+│   │   ├── plugins/  # البلجنات (whisper, pdf_reader, dummy…)
+│   │   ├── services/ # خدمات مشابهة للبلجن
+│   │   ├── workflows/# منطق orchestrator
+│   │   └── core/     # إعدادات، لوج، utils
+│   └── tools/        # سكربتات توليد مخططات وملحقات
+├── streamlit/        # الواجهة الأمامية (UI)
+│   ├── core/         # state, storage, calls
+│   └── ui/           # sidebar + تبويبات
+├── uploads/          # ملفات المستخدم المرفوعة
+└── .github/workflows # CI/CD (Linux, Windows, macOS, GPU, Streamlit)
+
 
 ```
+
+---
+
+## Documentation
+
+- [User Management](docs/README_UserManagement.md)
 
 ---
 

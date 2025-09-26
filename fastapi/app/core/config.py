@@ -6,7 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from pydantic import Field
+from pydantic import Field, AliasChoices
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # ------------------------------------------------------------------------------
@@ -118,8 +118,16 @@ class Settings(BaseSettings):
     # ================================
     # Database (optional)
     # ================================
-    DB_URL: str | None = None  # e.g., postgresql+psycopg://user:pass@host:5432/db
-
+    # DB_URL: str | None = None  # e.g., postgresql+psycopg://user:pass@host:5432/db
+    DATABASE_URL: str = Field(
+        default="sqlite+aiosqlite:///./db/neuronexus.sqlite3",
+        validation_alias=AliasChoices(
+            "DATABASE_URL",                
+            "APP_DATABASE_URL",            
+            "APP_DATABASE_URL_SQLITE",     
+            "APP_DATABASE_URL_POSTGRES",   
+        ),
+    )
     # ================================
     # JWT security (optional)
     # ================================
@@ -217,7 +225,7 @@ class Settings(BaseSettings):
             "templates_dir": str(self.TEMPLATES_DIR.resolve()),
             "upload_dir": str(self.UPLOAD_DIR.resolve()),
             "samples_dir": str(self.SAMPLES_DIR.resolve()),
-            "db_url": bool(self.DB_URL),
+            "db_url": bool(self.DATABASE_URL),
             "jwt_enabled": bool(self.JWT_SECRET),
             "pooling": {
                 "max_active_models": self.MAX_ACTIVE_MODELS,

@@ -25,6 +25,8 @@ from app.core.logging_ import setup_logging
 from app.runtime.model_pool import get_model_pool
 from app.core.path_utils import as_path
 
+from app.db import SessionLocal
+from app.crud.users import get_user_by_username, create_user
 
 try:
     from app.plugins.loader import list_plugins  # returns dict{name: manifest} or list[str]
@@ -82,6 +84,48 @@ app = FastAPI(
         "docExpansion": "none",
     },
 )
+
+# --- Seed admin on startup (once) ---
+from app.models.user import User
+
+@app.on_event("startup")
+def seed_admin_user() -> None:
+    username  = getattr(settings, "APP_ADMIN_USER", None)
+    pass_plain = getattr(settings, "APP_ADMIN_PASS", None)
+    pass_hash  = getattr(settings, "APP_ADMIN_BCRYPT", None)
+
+    if not username or not (pass_plain or pass_hash):
+        return
+
+    db = SessionLocal()
+    try:
+        if get_user_by_username(db, username):
+            logger.info("[seed] admin user already exists: %s", username)
+            return
+
+        if pass_hash:
+            # create with pre-hashed password
+            u = User(
+                username=username,
+                password_hash=pass_hash,
+                is_superuser=True,
+                is_active=True,
+            )
+            db.add(u)
+            db.commit()
+        else:
+            # create with plaintext -> hashed inside create_user()
+            create_user(db, username, pass_plain, is_superuser=True)
+
+        # verify creation
+        logger.info("[seed] admin user created: %s", username)
+
+    except Exception:
+        logger.exception("[seed] failed to create admin user")
+    finally:
+        db.close()
+# --- end seed admin ---
+
 
 # Static files
 # Static files (ensure dirs or allow startup even if missing)

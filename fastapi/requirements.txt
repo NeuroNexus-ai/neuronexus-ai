@@ -50,5 +50,10 @@ PyPDF2
 transformers
 librosa
 torchaudio
+passlib[bcrypt]
+
+# Database
+alembic
+SQLAlchemy>=2.0
 
 
