@@ -1,3 +1,5 @@
+# Path from repo root: fastapi\app\api\routes_invites.py
+
 from __future__ import annotations
 import os, secrets
 from datetime import datetime, timedelta

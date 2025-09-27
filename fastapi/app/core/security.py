@@ -1,3 +1,5 @@
+# Path from repo root: fastapi\app\core\security.py
+
 from __future__ import annotations
 from datetime import datetime, timedelta
 import os, base64, hashlib, hmac, secrets, jwt

@@ -1,3 +1,5 @@
+# Path from repo root: fastapi\app\api\routes_register.py
+
 from __future__ import annotations
 import os
 from fastapi import APIRouter, Depends, HTTPException

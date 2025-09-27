@@ -1,3 +1,5 @@
+# Path from repo root: fastapi\app\api\deps.py
+
 from __future__ import annotations
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
