@@ -1,4 +1,4 @@
-# app/plugins/loader.py
+# Path from repo root: fastapi\app\plugins\loader.py
 from __future__ import annotations
 
 import importlib

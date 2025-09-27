@@ -1,3 +1,5 @@
+# Path from repo root: streamlit\ui\tabs\tab_inference.py
+
 # streamlit/ui/tabs/tab_inference.py
 from __future__ import annotations
 import streamlit as st

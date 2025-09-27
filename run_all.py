@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# run_all.py
 """NeuroNexus-ai — Pure ANSI Pro Launcher (no external dependencies).
 
 Features

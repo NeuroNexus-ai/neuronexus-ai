@@ -1,3 +1,5 @@
+# Path from repo root: streamlit\ui\css.py
+
 # streamlit/ui/css.py
 from __future__ import annotations
 from pathlib import Path

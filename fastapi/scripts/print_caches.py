@@ -1,3 +1,4 @@
+# Path from repo root: fastapi\scripts\print_caches.py
 import os
 import sys
 from pathlib import Path

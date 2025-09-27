@@ -1,3 +1,5 @@
+# Path from repo root: fastapi\alembic\versions\ace6bf99550a_create_users_table.py
+
 """create users table
 
 Revision ID: ace6bf99550a

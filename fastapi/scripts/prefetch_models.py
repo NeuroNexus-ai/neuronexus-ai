@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# Path from repo root: fastapi\scripts\prefetch_models.py
 """
 Dynamic prefetch for all available plugins.
 

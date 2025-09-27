@@ -1,3 +1,4 @@
+# Path from repo root: fastapi\app\services\pdf_reader\service.py
 from __future__ import annotations
 
 from pathlib import Path

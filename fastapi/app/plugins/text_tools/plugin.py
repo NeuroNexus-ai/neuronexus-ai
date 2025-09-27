@@ -1,3 +1,4 @@
+# Path from repo root: fastapi\app\plugins\text_tools\plugin.py
 from __future__ import annotations
 import importlib
 from typing import Any

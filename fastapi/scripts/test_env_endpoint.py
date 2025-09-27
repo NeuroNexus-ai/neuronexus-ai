@@ -1,4 +1,4 @@
-# scripts/test_env_endpoint.py
+# Path from repo root: fastapi\scripts\test_env_endpoint.py
 import os
 import sys
 import importlib

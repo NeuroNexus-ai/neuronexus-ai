@@ -1,4 +1,4 @@
-# app/utils/storage.py
+# Path from repo root: fastapi\app\utils\storage.py
 from __future__ import annotations
 
 import re

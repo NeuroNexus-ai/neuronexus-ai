@@ -1,3 +1,5 @@
+# Path from repo root: streamlit\ui\tabs\tab_uploads.py
+
 # ui/tabs/tab_uploads.py
 from __future__ import annotations
 from typing import Optional, Dict

@@ -1,4 +1,4 @@
-# app/routers/router_uploads.py
+# Path from repo root: fastapi\app\api\router_uploads.py
 from __future__ import annotations
 
 import hashlib

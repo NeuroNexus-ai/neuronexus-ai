@@ -1,0 +1,1 @@
+# Path from repo root: fastapi\app\plugins\dummy\__init__.py

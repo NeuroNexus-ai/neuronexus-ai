@@ -1,3 +1,4 @@
+# Path from repo root: fastapi\tests\test_env_endpoint.py
 import os, importlib, sys
 import pytest
 from starlette.testclient import TestClient

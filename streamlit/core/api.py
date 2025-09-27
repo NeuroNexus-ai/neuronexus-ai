@@ -1,3 +1,5 @@
+# Path from repo root: streamlit\core\api.py
+
 # streamlit/core/api.py
 from __future__ import annotations
 import json, requests, streamlit as st

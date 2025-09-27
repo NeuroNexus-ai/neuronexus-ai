@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# Path from repo root: fastapi\tools\reset_admin.py
 """
 Reset or create the admin user (scrypt password).
 Usage:

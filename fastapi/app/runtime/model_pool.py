@@ -1,4 +1,4 @@
-# app/runtime/model_pool.py
+# Path from repo root: fastapi\app\runtime\model_pool.py
 from __future__ import annotations
 
 import threading

@@ -1,4 +1,4 @@
-# fastapi/tools/diagram_console.py
+# Path from repo root: fastapi\tools\diagram_console.py
 from __future__ import annotations
 import json
 import os

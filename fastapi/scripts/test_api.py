@@ -1,4 +1,4 @@
-# tests/test_api.py
+# Path from repo root: fastapi\scripts\test_api.py
 import os
 
 import requests

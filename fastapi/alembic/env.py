@@ -1,3 +1,5 @@
+# Path from repo root: fastapi\alembic\env.py
+
 from __future__ import annotations
 
 import pathlib

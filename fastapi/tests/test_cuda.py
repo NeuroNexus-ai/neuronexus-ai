@@ -1,4 +1,4 @@
-# tests/test_cuda.py
+# Path from repo root: fastapi\tests\test_cuda.py
 import pytest
 
 

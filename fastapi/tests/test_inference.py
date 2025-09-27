@@ -1,3 +1,4 @@
+# Path from repo root: fastapi\tests\test_inference.py
 from app.main import app
 from starlette.testclient import TestClient
 

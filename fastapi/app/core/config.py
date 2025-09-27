@@ -1,4 +1,4 @@
-# app/core/config.py
+# Path from repo root: fastapi\app\core\config.py
 from __future__ import annotations
 
 import os

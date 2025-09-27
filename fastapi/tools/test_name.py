@@ -1,4 +1,4 @@
-# tools/open_file_gui.py
+# Path from repo root: fastapi\tools\test_name.py
 import base64, json
 from pathlib import Path
 from tkinter import Tk, filedialog

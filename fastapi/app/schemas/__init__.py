@@ -1,4 +1,4 @@
-# app/schemas/__init__.py
+# Path from repo root: fastapi\app\schemas\__init__.py
 from .users import UserCreate, UserUpdate, UserOut, RoleOut
 
 __all__ = [

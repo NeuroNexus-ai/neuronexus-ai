@@ -1,5 +1,4 @@
-# app/plugins/__init__.py
-
+# Path from repo root: fastapi\app\plugins\__init__.py
 from .base import AIPlugin
 from .loader import (
     list_plugins,

@@ -1,4 +1,4 @@
-# fastapi/dashboard/pages/03_Diagram_Console.py
+# Path from repo root: fastapi\tools\03_Diagram_Console.py
 from __future__ import annotations
 
 import sys

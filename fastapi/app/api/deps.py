@@ -1,4 +1,4 @@
-# fastapi/app/api/deps.py
+# Path from repo root: fastapi\app\api\deps.py
 from __future__ import annotations
 from sqlalchemy.orm import Session
 from fastapi import Depends

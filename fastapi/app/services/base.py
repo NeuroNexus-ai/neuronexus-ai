@@ -1,4 +1,4 @@
-# app/services/base.py
+# Path from repo root: fastapi\app\services\base.py
 from __future__ import annotations
 from typing import Any, Dict
 

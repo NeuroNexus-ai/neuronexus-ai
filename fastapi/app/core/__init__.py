@@ -1,4 +1,4 @@
-# app/core/__init__.py
+# Path from repo root: fastapi\app\core\__init__.py
 from .config import get_settings
 from .jwt import create_access_token, create_refresh_token, decode_token
 from .security import hash_password, verify_password, needs_rehash

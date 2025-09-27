@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# Cross-platform bootstrap: creates venvs and installs requirements
+# Path from repo root: tools\bootstrap_envs.py
 from __future__ import annotations
 
 import os

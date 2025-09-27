@@ -1,4 +1,4 @@
-# app/core/jwt.py
+# Path from repo root: fastapi\app\core\jwt.py
 from __future__ import annotations
 from datetime import datetime, timedelta
 import jwt

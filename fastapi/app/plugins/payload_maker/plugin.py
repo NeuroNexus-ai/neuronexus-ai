@@ -1,3 +1,4 @@
+# Path from repo root: fastapi\app\plugins\payload_maker\plugin.py
 from __future__ import annotations
 import importlib
 from typing import Any

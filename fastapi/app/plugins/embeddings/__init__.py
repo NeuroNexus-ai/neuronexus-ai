@@ -1,0 +1,1 @@
+# Path from repo root: fastapi\app\plugins\embeddings\__init__.py

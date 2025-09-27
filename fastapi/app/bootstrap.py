@@ -1,4 +1,4 @@
-# app/bootstrap.py
+# Path from repo root: fastapi\app\bootstrap.py
 from __future__ import annotations
 
 import os

@@ -1,3 +1,5 @@
+# Path from repo root: streamlit\ui\tabs\tab_auth.py
+
 # streamlit/ui/tabs/tab_auth.py
 from __future__ import annotations
 import streamlit as st

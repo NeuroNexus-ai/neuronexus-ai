@@ -1,4 +1,4 @@
-# app/services/_utils_upload.py
+# Path from repo root: fastapi\app\services\_utils_upload.py
 from __future__ import annotations
 import base64
 import hashlib

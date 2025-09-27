@@ -1,4 +1,4 @@
-# tools/recreate_plugin_wrappers.py
+# Path from repo root: fastapi\tools\recreate_plugin_wrappers.py
 from __future__ import annotations
 
 import argparse

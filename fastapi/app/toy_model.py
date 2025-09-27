@@ -1,3 +1,4 @@
+# Path from repo root: fastapi\app\toy_model.py
 from __future__ import annotations
 
 import torch

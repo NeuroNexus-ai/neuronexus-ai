@@ -1,2 +1,1 @@
-# app/api/__init__.py
-# Keep empty to avoid circular imports.
+# Path from repo root: fastapi\app\api\__init__.py

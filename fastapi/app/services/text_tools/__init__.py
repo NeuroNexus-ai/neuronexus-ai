@@ -1,3 +1,4 @@
+# Path from repo root: fastapi\app\services\text_tools\__init__.py
 from .service import Service
 
 TASKS = getattr(Service, "tasks", [])

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# Path from repo root: fastapi\tools\diagram_services_plugins.py
 """
 Generate architecture diagrams from the actual project layout (services & plugins).
 

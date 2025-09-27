@@ -1,4 +1,4 @@
-# app/main.py
+# Path from repo root: fastapi\app\main.py
 from __future__ import annotations
 
 import asyncio

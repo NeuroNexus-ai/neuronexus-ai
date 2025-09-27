@@ -1,4 +1,4 @@
-# app/core/path_utils.py
+# Path from repo root: fastapi\app\core\path_utils.py
 from __future__ import annotations
 from pathlib import Path
 

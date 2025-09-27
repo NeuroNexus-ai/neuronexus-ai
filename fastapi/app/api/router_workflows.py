@@ -1,4 +1,4 @@
-# app/api/router_workflows.py
+# Path from repo root: fastapi\app\api\router_workflows.py
 from __future__ import annotations
 
 import inspect

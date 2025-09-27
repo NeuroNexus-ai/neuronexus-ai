@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# Path from repo root: fastapi\tools\commit_clean.py
 from __future__ import annotations
 
 import argparse

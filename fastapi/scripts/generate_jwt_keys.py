@@ -1,4 +1,4 @@
-# scripts/generate_jwt_keys.py
+# Path from repo root: fastapi\scripts\generate_jwt_keys.py
 from __future__ import annotations
 
 import argparse

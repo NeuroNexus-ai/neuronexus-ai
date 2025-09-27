@@ -1,0 +1,1 @@
+# Path from repo root: fastapi\app\plugins\pdf_reader\__init__.py

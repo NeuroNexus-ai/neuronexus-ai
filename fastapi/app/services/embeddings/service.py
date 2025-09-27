@@ -1,4 +1,4 @@
-# fastapi/app/services/embeddings/service.py
+# Path from repo root: fastapi\app\services\embeddings\service.py
 from __future__ import annotations
 
 import os

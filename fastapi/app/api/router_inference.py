@@ -1,4 +1,4 @@
-# root/fastapi/app/api/router_inference.py
+# Path from repo root: fastapi\app\api\router_inference.py
 from __future__ import annotations
 
 import inspect

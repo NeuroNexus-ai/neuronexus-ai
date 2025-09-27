@@ -1,3 +1,5 @@
+# Path from repo root: streamlit\core\tokens.py
+
 # streamlit/core/tokens.py
 from __future__ import annotations
 from typing import Any, Dict, Optional, Union

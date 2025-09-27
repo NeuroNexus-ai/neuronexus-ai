@@ -1,4 +1,4 @@
-# tools/generate_per_service_assets.py
+# Path from repo root: fastapi\tools\generate_per_service_assets.py
 from __future__ import annotations
 
 import argparse

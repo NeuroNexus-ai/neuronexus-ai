@@ -1,4 +1,4 @@
-# app/crud/users.py
+# Path from repo root: fastapi\app\crud\users.py
 from __future__ import annotations
 from typing import Optional
 

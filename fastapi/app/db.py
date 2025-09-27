@@ -1,4 +1,4 @@
-# app/db.py
+# Path from repo root: fastapi\app\db.py
 from __future__ import annotations
 
 from sqlalchemy import create_engine

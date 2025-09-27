@@ -1,4 +1,4 @@
-# app.py
+# Path from repo root: app_translated_pep8.py
 from __future__ import annotations
 
 import json

@@ -1,3 +1,5 @@
+# Path from repo root: streamlit\ui\auth\http.py
+
 # streamlit/ui/auth/http.py
 from __future__ import annotations
 from typing import Dict, Optional, Any, Iterable

@@ -1,3 +1,4 @@
+# Path from repo root: fastapi\app\services\uploader_image\service.py
 from __future__ import annotations
 from typing import Any, Optional
 from pathlib import Path

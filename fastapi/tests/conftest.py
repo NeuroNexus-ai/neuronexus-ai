@@ -1,3 +1,4 @@
+# Path from repo root: fastapi\tests\conftest.py
 import pytest
 from starlette.testclient import TestClient
 

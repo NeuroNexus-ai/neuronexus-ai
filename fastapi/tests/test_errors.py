@@ -1,4 +1,4 @@
-# app/core/errors.py
+# Path from repo root: fastapi\tests\test_errors.py
 from __future__ import annotations
 
 import logging

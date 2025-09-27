@@ -1,0 +1,1 @@
+# Path from repo root: fastapi\app\plugins\uploader_video\__init__.py

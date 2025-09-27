@@ -1,4 +1,4 @@
-# app/api/routes_auth.py
+# Path from repo root: fastapi\app\api\routes_auth.py
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status

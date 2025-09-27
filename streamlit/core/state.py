@@ -1,3 +1,5 @@
+# Path from repo root: streamlit\core\state.py
+
 # streamlit/core/state.py
 from __future__ import annotations
 import json

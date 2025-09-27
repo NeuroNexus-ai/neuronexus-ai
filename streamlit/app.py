@@ -1,3 +1,5 @@
+# Path from repo root: streamlit\app.py
+
 # streamlit/app.py
 from __future__ import annotations
 import streamlit as st

@@ -1,3 +1,4 @@
+# Path from repo root: fastapi\app\plugins\uploader_video\plugin.py
 from __future__ import annotations
 import importlib
 from typing import Any

@@ -1,0 +1,1 @@
+# Path from repo root: fastapi\app\plugins\uploader_image\__init__.py

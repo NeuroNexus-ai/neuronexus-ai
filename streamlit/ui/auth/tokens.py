@@ -1,3 +1,5 @@
+# Path from repo root: streamlit\ui\auth\tokens.py
+
 # streamlit/ui/auth/tokens.py
 from __future__ import annotations
 from typing import Dict, Optional, cast

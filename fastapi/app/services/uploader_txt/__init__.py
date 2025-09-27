@@ -1,3 +1,4 @@
+# Path from repo root: fastapi\app\services\uploader_txt\__init__.py
 from .service import Service
 
 TASKS = getattr(Service, "tasks", [])

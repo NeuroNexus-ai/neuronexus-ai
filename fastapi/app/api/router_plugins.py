@@ -1,3 +1,4 @@
+# Path from repo root: fastapi\app\api\router_plugins.py
 from __future__ import annotations
 
 import importlib

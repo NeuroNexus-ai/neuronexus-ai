@@ -1,3 +1,5 @@
+# Path from repo root: streamlit\ui\sidebar.py
+
 # streamlit/ui/sidebar.py
 from __future__ import annotations
 import streamlit as st

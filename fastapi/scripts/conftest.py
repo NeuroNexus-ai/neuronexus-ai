@@ -1,4 +1,4 @@
-# scripts/conftest.py
+# Path from repo root: fastapi\scripts\conftest.py
 import pytest
 from fastapi.testclient import TestClient
 

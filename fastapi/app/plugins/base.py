@@ -1,3 +1,4 @@
+# Path from repo root: fastapi\app\plugins\base.py
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

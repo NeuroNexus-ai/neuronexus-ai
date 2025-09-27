@@ -1,3 +1,5 @@
+# Path from repo root: streamlit\core\capabilities.py
+
 # streamlit/core/capabilities.py
 from __future__ import annotations
 from typing import Optional, Dict

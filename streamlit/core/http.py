@@ -1,3 +1,5 @@
+# Path from repo root: streamlit\core\http.py
+
 # streamlit/core/http.py
 from __future__ import annotations
 from typing import Any, Dict, Optional, Tuple

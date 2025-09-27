@@ -1,3 +1,4 @@
+# Path from repo root: fastapi\scripts\install_torch.py
 """
 Cross-platform PyTorch installer:
 - NVIDIA -> cu124 wheels

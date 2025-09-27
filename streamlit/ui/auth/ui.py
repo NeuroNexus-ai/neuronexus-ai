@@ -1,3 +1,5 @@
+# Path from repo root: streamlit\ui\auth\ui.py
+
 # streamlit/ui/auth/ui.py
 from __future__ import annotations
 from typing import Optional

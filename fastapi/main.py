@@ -1,3 +1,5 @@
+# Path from repo root: fastapi\main.py
+
 # app/main.py
 
 from fastapi import FastAPI

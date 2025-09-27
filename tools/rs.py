@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# Path from repo root: tools\rs.py
 from __future__ import annotations
 
 import json

@@ -1,4 +1,4 @@
-# app/schemas/users.py
+# Path from repo root: fastapi\app\schemas\users.py
 from __future__ import annotations
 from datetime import datetime
 from typing import Optional

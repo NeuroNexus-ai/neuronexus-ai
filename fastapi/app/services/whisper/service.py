@@ -1,3 +1,5 @@
+# Path from repo root: fastapi\app\services\whisper\service.py
+
 from __future__ import annotations
 
 """Whisper transcription service with flexible audio backends.

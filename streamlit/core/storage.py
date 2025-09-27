@@ -1,3 +1,5 @@
+# Path from repo root: streamlit\core\storage.py
+
 # streamlit/core/storage.py
 from __future__ import annotations
 import json

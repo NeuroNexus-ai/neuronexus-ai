@@ -1,3 +1,4 @@
+# Path from repo root: fastapi\app\calc_model_size.py
 def model_size(in_features: int, hidden: int, out_features: int, dtype_bytes: int = 4) -> dict:
     """
     Calculate the number of weights and memory size required for a simple MLP model.

@@ -1,4 +1,4 @@
-# app/core/logging_.py
+# Path from repo root: fastapi\app\core\logging_.py
 import logging
 import sys
 
