@@ -1,3 +1,4 @@
+# streamlit/core/constants.py
 from __future__ import annotations
 from pathlib import Path
 

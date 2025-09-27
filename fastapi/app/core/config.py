@@ -152,6 +152,16 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    # ================================
+    # Scrypt settings (password hashing)
+    # ================================
+    SCRYPT_N: int = 16384
+    SCRYPT_R: int = 8
+    SCRYPT_P: int = 1
+    SCRYPT_DKLEN: int = 64
+    SCRYPT_SALT_LEN: int = 16
+
+
     # -------------------------------
     # Post-init hook (Pydantic v2)
     # Compute defaults for cache dirs if not provided and make sure paths exist.

@@ -1,8 +1,11 @@
+# app/services/_utils_upload.py
 from __future__ import annotations
-import base64, hashlib, os
+import base64
+import hashlib
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+
 
 UPLOADS_ROOT = Path("uploads")
 

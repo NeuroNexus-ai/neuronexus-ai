@@ -2,8 +2,17 @@
 # -*- coding: utf-8 -*-
 """
 Reset or create the admin user (scrypt password).
-Usage:
-    py fastapi/tools/reset_admin.py --create-if-missing
+Usage (interactive):
+    py fastapi/tools/reset_admin.py
+
+Non-interactive (from env):
+    setx ADMIN_USER admin
+    setx ADMIN_PASS secret123
+    setx ADMIN_EMAIL admin@example.com
+    py fastapi/tools/reset_admin.py --from-env --create-if-missing
+
+Non-interactive (args):
+    py fastapi/tools/reset_admin.py --username admin --password secret123 --email admin@example.com --create-if-missing
 """
 
 from __future__ import annotations
@@ -12,17 +21,20 @@ import argparse
 import getpass
 import os
 import sys
-from pathlib import Path
 from typing import Optional
 
-# --- Make sure imports work ---
+# --- Make sure "app/" is importable when executed from project root ---
+from pathlib import Path
+
 HERE = Path(__file__).resolve()
-FASTAPI_DIR = HERE.parents[1]
+FASTAPI_DIR = HERE.parents[1]              # .../fastapi
+PROJECT_ROOT = FASTAPI_DIR.parent          # .../neuronexus-ai
 if str(FASTAPI_DIR) not in sys.path:
     sys.path.insert(0, str(FASTAPI_DIR))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
-# --- Project imports ---
-from sqlalchemy import or_
+# --- Project imports (sync SQLAlchemy session + User model + scrypt hash) ---
 from app.db import SessionLocal  # type: ignore
 from app.models.user import User  # type: ignore
 from app.core.security import hash_password  # type: ignore
@@ -64,10 +76,10 @@ def _prompt_password() -> str:
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Reset or create admin user.")
-    p.add_argument("--username", "-u", type=str, help="Username (default: admin)")
+    p.add_argument("--username", "-u", type=str, help="Username to reset/create (default: admin)")
     p.add_argument("--email", "-e", type=str, help="Email (used on create)")
     p.add_argument("--password", "-p", type=str, help="Password (DANGEROUS on shared shells)")
-    p.add_argument("--from-env", action="store_true", help="Read from env: ADMIN_USER/ADMIN_PASS/ADMIN_EMAIL")
+    p.add_argument("--from-env", action="store_true", help="Read credentials from env (ADMIN_USER/ADMIN_PASS/ADMIN_EMAIL)")
     p.add_argument("--create-if-missing", action="store_true", help="Create the user if not found")
     p.add_argument("--make-superuser", action="store_true", default=True, help="Ensure is_superuser=True")
     p.add_argument("--no-make-superuser", dest="make_superuser", action="store_false")
@@ -83,6 +95,7 @@ def main() -> int:
     password = args.password
 
     if args.from_env:
+        # Take everything from env (if available)
         username = _env("ADMIN_USER", username)
         password = _env("ADMIN_PASS", password)
         email = _env("ADMIN_EMAIL", email)
@@ -90,10 +103,11 @@ def main() -> int:
     if not username:
         username = _prompt_nonempty("Username: ")
 
+    # If not passing password via args/env, ask interactively
     if not password:
         password = _prompt_password()
 
-    # Hash with project's scrypt
+    # Hash password with project's scrypt function
     try:
         pwd_hash = hash_password(password)
     except Exception as ex:
@@ -102,15 +116,17 @@ def main() -> int:
 
     db = SessionLocal()
     try:
-        conds = [User.username == username]
-        if email:
-            conds.append(User.email == email)
-        user = db.query(User).filter(or_(*conds)).first()
+        user: Optional[User] = (
+            db.query(User)
+            .filter((User.username == username) | ((email is not None) & (User.email == email)))
+            .first()
+        )
 
         if user is None:
             if not args.create_if_missing:
                 print(f"❌ User '{username}' not found. Use --create-if-missing to create.")
                 return 1
+            # Create new user
             user = User(
                 username=username,
                 email=email,
@@ -123,6 +139,7 @@ def main() -> int:
             db.refresh(user)
             print(f"✅ Created user '{username}' (id={user.id})")
         else:
+            # Update existing user
             user.password_hash = pwd_hash
             if args.make_superuser:
                 user.is_superuser = True
@@ -132,14 +149,11 @@ def main() -> int:
             db.commit()
             print(f"✅ Updated password for '{username}' (id={user.id})")
 
-        print("💡 Test login now via:")
-        print(
-            'curl.exe -X POST "http://127.0.0.1:8000/auth/login" '
-            '-H "Content-Type: application/x-www-form-urlencoded" '
-            '--data-urlencode "grant_type=password" '
-            f'--data-urlencode "username={username}" '
-            f'--data-urlencode "password=***"'
-        )
+        print("💡 You can test login now via:")
+        print("    curl.exe -X POST \"http://127.0.0.1:8000/auth/login\" "
+              "-H \"Content-Type: application/x-www-form-urlencoded\" "
+              f"--data-urlencode \"grant_type=password\" --data-urlencode \"username={username}\" --data-urlencode \"password=***\"")
+
         return 0
     except Exception as ex:
         db.rollback()

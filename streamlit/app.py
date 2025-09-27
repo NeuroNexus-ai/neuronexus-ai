@@ -1,33 +1,43 @@
+# streamlit/app.py
 from __future__ import annotations
-
 import streamlit as st
 
+from core.state import init_state, get_current_base_url
+from core.capabilities import features_for          # ✅ أضف هذا
 from ui.css import apply_css
-from core.state import init_state, current_base_and_feats
 from ui.sidebar import render_sidebar
-from ui.tabs import render_all_tabs
+from ui.tabs.tab_auth import render as render_tab_auth
+from ui.tabs.tab_plugins import render as render_tab_plugins
+from ui.tabs.tab_workflows import render as render_tab_workflows
+from ui.tabs.tab_uploads import render as render_tab_uploads
 
-def main():
-    """Main function to initialize and render the NeuroNexus-ai Streamlit app.
+st.set_page_config(page_title="NeuroNexus • Console", layout="wide")
+apply_css()
+init_state()
 
-    This function configures the Streamlit page, applies custom CSS styling,
-    initializes session state, renders the sidebar UI, and loads all tabs
-    based on the current base URL and features.
-    """
-    st.set_page_config(
-        page_title="NeuroNexus-ai",
-        page_icon="🚀",
-        layout="wide"
-    )
+base_url = get_current_base_url()
 
-    apply_css()            # Applies custom styles from .streamlit/neuroserve.css
-    init_state()           # Initializes the session state variables
+# ✅ استدعِ الـ sidebar
+with st.sidebar:
+    render_sidebar()
 
-    render_sidebar()       # Handles UI for server, token, and badge management
+# ✅ احسب القدرات قبل رسم التبويبات
+try:
+    feats = features_for(base_url)  # عادة ترجع dict فيه ما يدعمه السيرفر (auth/uploads/plugins/…)
+except Exception as e:
+    st.warning(f"Failed to fetch capabilities from server: {e}")
+    feats = {}  # بديل آمن
 
-    base_url, feats = current_base_and_feats()  # Retrieves current base URL and features
-    render_all_tabs(base_url, feats)            # Renders all tabs based on available features
+st.title("NeuroNexus Console")
 
-
-if __name__ == "__main__":
-    main()
+tabs = st.tabs(["🔐 Auth", "👥 Users", "🧩 Plugins", "⚙️ Workflows", "📤 Uploads"])
+with tabs[0]:
+    render_tab_auth(base_url)
+with tabs[1]:
+    render_tab_users(base_url, feats)
+with tabs[2]:
+    render_tab_plugins(base_url, feats)
+with tabs[3]:
+    render_tab_workflows(base_url, feats)
+with tabs[4]:
+    render_tab_uploads(base_url, feats)
