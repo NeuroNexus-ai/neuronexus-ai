@@ -1,79 +1,58 @@
-# Path from repo root: fastapi\app\api\routes_auth.py
 from __future__ import annotations
-
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
-
-from app.api.deps import get_db
-from app.schemas.users import UserCreate
-from app.crud.users import get_by_username, create_user
-from app.core.security import verify_password, needs_rehash, hash_password
-
-# موديول الـ JWT يجب أن يوفّر: create_access_token, create_refresh_token, decode_token
-# (إذا كان عندك اختلاف أسماء الحقول في config مثل JWT_ALGORITHM مقابل JWT_ALG، حدّث app/core/jwt.py ليناسب config.py الحالي)
-from app.core.jwt import create_access_token, create_refresh_token, decode_token
+from app.core.security import create_access_token, create_refresh_token
+from app.models.user import User, RefreshToken
+from app.db import SessionLocal
+from passlib.hash import bcrypt
+from datetime import datetime
+from typing import Optional, List
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+class LoginIn(BaseModel):
+    username: str
+    password: str
 
-@router.post("/register")
-def register(payload: UserCreate, db: Session = Depends(get_db)):
-    """
-    إنشاء مستخدم جديد وتخزين كلمة المرور بـ scrypt.
-    """
-    if get_by_username(db, payload.username):
-        raise HTTPException(status_code=400, detail="Username already exists")
-    u = create_user(db, payload.username, payload.password, payload.email)
-    return {"id": u.id, "username": u.username, "email": u.email}
+class TokensOut(BaseModel):
+    access_token: str
+    refresh_token: str
 
-
-@router.post("/login")
-def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    """
-    OAuth2 Password flow:
-      Content-Type: application/x-www-form-urlencoded
-      username=<user>&password=<pass>
-    يرجّع access/refresh JWT عند نجاح التحقق.
-    """
-    username = form.username
-    password = form.password
-
-    user = get_by_username(db, username)
-    if not user or not verify_password(password, user.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-
-    # ترحيل كسول: إن كان الهاش قديم (bcrypt) أو تغيّرت معاملات scrypt → أعد الهاش وخزّنه
-    if needs_rehash(user.password_hash):
-        user.password_hash = hash_password(password)
-        db.add(user)
-        db.commit()
-
-    # اجمع الأدوار إن كانت موجودة في الموديل، وإلا أرسل قائمة فارغة
+def get_db():
+    db = SessionLocal()
     try:
-        roles = [ur.role.name for ur in getattr(user, "roles", [])]
-    except Exception:
-        roles = []
+        yield db
+    finally:
+        db.close()
 
-    return {
-        "access_token": create_access_token(user.username, roles),
-        "refresh_token": create_refresh_token(user.username),
-        "token_type": "bearer",
-    }
+@router.post("/login", response_model=TokensOut)
+def login(body: LoginIn, db: Session = Depends(get_db)):
+    u: Optional[User] = db.query(User).filter(User.username == body.username).first()
+    if not u or not u.is_active or not bcrypt.verify(body.password, u.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    roles = ["admin"] if u.is_superuser else [
+        r.role.name for r in u.roles
+    ]
+    access = create_access_token(sub=str(u.id), roles=roles)
+    refresh, exp = create_refresh_token(sub=str(u.id))
 
+    # persist refresh (hashed)
+    rt = RefreshToken(user_id=u.id,
+                      token_hash=bcrypt.hash(refresh),
+                      expires_at=exp)
+    db.add(rt); db.commit()
+    return {"access_token": access, "refresh_token": refresh}
 
-@router.post("/refresh")
-def refresh(refresh_token: str):
-    """
-    تجديد access token باستخدام refresh token صالح.
-    """
-    payload = decode_token(refresh_token)
-    if payload.get("scope") != "refresh":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+@router.get("/me")
+def me(roles: List[str] = Depends(lambda: []), db: Session = Depends(get_db)):
+    return {"ok": True, "roles": roles}
 
-    subject = payload.get("sub")
-    if not subject:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
+class RefreshIn(BaseModel):
+    refresh_token: str
 
-    # بإمكانك إعادة جلب الأدوار من DB لضبط أدقّ؛ هنا نعيدها فارغة أو يمكنك تعديلها لاحقًا.
-    return {"access_token": create_access_token(subject, roles=[]), "token_type": "bearer"}
+@router.post("/refresh", response_model=TokensOut)
+def refresh(body: RefreshIn, db: Session = Depends(get_db)):
+    new_access = create_access_token(sub="unknown", roles=[])
+    new_refresh, _ = create_refresh_token(sub="unknown")
+    return {"access_token": new_access, "refresh_token": new_refresh}
