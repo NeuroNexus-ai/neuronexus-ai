@@ -1,41 +1,31 @@
 # Path from repo root: fastapi\alembic\env.py
-
 from __future__ import annotations
 
-import pathlib
-import sys
 from logging.config import fileConfig
-
+import sys, pathlib
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from app.core.config import get_settings
-from app.models.user import Base
-
-# Add the parent directory to the system path so app/ can be located
+# Ensure fastapi/ is on sys.path
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
-# Alembic Config object
+# Import ONLY what's needed (avoid importing app.core top-level side-effects)
+from app.models.user import Base
+from app.core.config import get_settings
+
 config = context.config
 
-# Application settings
+# Read DATABASE_URL from app settings (strip +aiosqlite for sync engine)
 st = get_settings()
 config.set_main_option("sqlalchemy.url", st.DATABASE_URL.replace("+aiosqlite", ""))
 
-# Configure logging from the config file
+# Logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Target metadata for 'autogenerate' support
 target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
-    """
-    Run migrations in 'offline' mode.
-
-    This configures the context with just a URL and not an Engine.
-    Calls to context.execute() here emit the given string to the script output.
-    """
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
@@ -43,26 +33,18 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
     )
-
     with context.begin_transaction():
         context.run_migrations()
 
 def run_migrations_online() -> None:
-    """
-    Run migrations in 'online' mode.
-
-    In this scenario, an Engine is created and a connection is associated with the context.
-    """
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
-        future=True,
     )
 
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)
-
         with context.begin_transaction():
             context.run_migrations()
 

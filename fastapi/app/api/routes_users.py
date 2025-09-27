@@ -2,18 +2,16 @@
 from __future__ import annotations
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, EmailStr, Field
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import select, update, delete
 
 from app.db import SessionLocal
-from app.models.user import User, Role, UserRole
-from app.core.security import hash_password
+from app.schemas.user import UserCreate, UserOut, UserUpdate
+from app.crud import users as crud_users
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-# ====== DB dependency ======
+# --- DB dependency ---
 def get_db():
     db = SessionLocal()
     try:
@@ -21,144 +19,66 @@ def get_db():
     finally:
         db.close()
 
-# ====== Schemas ======
-class UserOut(BaseModel):
-    id: int
-    username: str
-    email: Optional[EmailStr] = None
-    is_active: bool
-    is_superuser: bool
+# --- Auth placeholder (to be replaced with real JWT) ---
+def require_superuser() -> None:
+    # TODO: Replace with JWT-based check in next step.
+    # For now, allow everything for local testing:
+    return
 
-    class Config:
-        from_attributes = True
-
-class UserCreate(BaseModel):
-    username: str = Field(min_length=3, max_length=120)
-    email: Optional[EmailStr] = None
-    password: str = Field(min_length=6)
-    is_active: bool = True
-    is_superuser: bool = False
-    roles: Optional[List[str]] = None  # أسماء الأدوار
-
-class UserUpdate(BaseModel):
-    email: Optional[EmailStr] = None
-    is_active: Optional[bool] = None
-    is_superuser: Optional[bool] = None
-    roles: Optional[List[str]] = None  # استبدال كامل للأدوار لو مُرسلة
-
-class PasswordResetIn(BaseModel):
-    password: str = Field(min_length=6)
-
-class RoleOut(BaseModel):
-    id: int
-    name: str
-    description: Optional[str] = None
-
-    class Config:
-        from_attributes = True
-
-# ===== Helpers =====
-def _apply_roles(db: Session, user: User, role_names: Optional[List[str]]):
-    if role_names is None:
-        return
-    # اجلب كل الأدوار الموجودة أو أنشئ الناقص
-    existing = {r.name: r for r in db.execute(select(Role)).scalars().all()}
-    needed = []
-    for name in role_names:
-        r = existing.get(name)
-        if not r:
-            r = Role(name=name)
-            db.add(r)
-            db.flush()
-        needed.append(r)
-    user.roles = needed  # استبدال كامل
-    db.flush()
-
-# ===== Routes =====
-@router.get("", response_model=List[UserOut])
+@router.get("/", response_model=List[UserOut])
 def list_users(
-    q: Optional[str] = Query(default=None, description="search in username/email"),
-    page: int = 1,
-    page_size: int = 20,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
+    _=Depends(require_superuser),
 ):
-    stmt = select(User)
-    if q:
-        like = f"%{q}%"
-        stmt = stmt.where((User.username.ilike(like)) | (User.email.ilike(like)))
-    stmt = stmt.order_by(User.id).offset((page - 1) * page_size).limit(page_size)
-    return db.execute(stmt).scalars().all()
+    return list(crud_users.list_users(db, skip=skip, limit=limit))
 
 @router.get("/{user_id}", response_model=UserOut)
-def get_user(user_id: int, db: Session = Depends(get_db)):
-    user = db.get(User, user_id)
-    if not user:
-        raise HTTPException(404, "User not found")
-    return user
+def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    _=Depends(require_superuser),
+):
+    u = crud_users.get_by_id(db, user_id)
+    if not u:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return u
 
-@router.post("", response_model=UserOut, status_code=201)
-def create_user(payload: UserCreate, db: Session = Depends(get_db)):
-    if db.execute(select(User).where(User.username == payload.username)).scalar_one_or_none():
-        raise HTTPException(409, "Username already exists")
-    if payload.email and db.execute(select(User).where(User.email == payload.email)).scalar_one_or_none():
-        raise HTTPException(409, "Email already exists")
+@router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+def create_user(
+    data: UserCreate,
+    db: Session = Depends(get_db),
+    _=Depends(require_superuser),
+):
+    try:
+        return crud_users.create_user(db, data)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-    user = User(
-        username=payload.username,
-        email=payload.email,
-        password_hash=hash_password(payload.password),  # scrypt
-        is_active=payload.is_active,
-        is_superuser=payload.is_superuser,
-    )
-    db.add(user)
-    db.flush()
-    _apply_roles(db, user, payload.roles)
-    db.commit()
-    db.refresh(user)
-    return user
+@router.put("/{user_id}", response_model=UserOut)
+def update_user(
+    user_id: int,
+    data: UserUpdate,
+    db: Session = Depends(get_db),
+    _=Depends(require_superuser),
+):
+    u = crud_users.get_by_id(db, user_id)
+    if not u:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    try:
+        return crud_users.update_user(db, u, data)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.patch("/{user_id}", response_model=UserOut)
-def update_user(user_id: int, payload: UserUpdate, db: Session = Depends(get_db)):
-    user = db.get(User, user_id)
-    if not user:
-        raise HTTPException(404, "User not found")
-
-    if payload.email is not None:
-        # تحقق من فريدية الإيميل
-        if payload.email:
-            exists = db.execute(select(User).where(User.email == payload.email, User.id != user_id)).scalar_one_or_none()
-            if exists:
-                raise HTTPException(409, "Email already exists")
-        user.email = payload.email
-
-    if payload.is_active is not None:
-        user.is_active = payload.is_active
-    if payload.is_superuser is not None:
-        user.is_superuser = payload.is_superuser
-
-    if payload.roles is not None:
-        _apply_roles(db, user, payload.roles)
-
-    db.commit()
-    db.refresh(user)
-    return user
-
-@router.delete("/{user_id}", status_code=204)
-def delete_user(user_id: int, db: Session = Depends(get_db)):
-    user = db.get(User, user_id)
-    if not user:
-        return
-    db.delete(user)
-    db.commit()
-
-@router.post("/{user_id}/password", status_code=204)
-def reset_password(user_id: int, payload: PasswordResetIn, db: Session = Depends(get_db)):
-    user = db.get(User, user_id)
-    if not user:
-        raise HTTPException(404, "User not found")
-    user.password_hash = hash_password(payload.password)
-    db.commit()
-
-@router.get("/roles/list", response_model=List[RoleOut])
-def list_roles(db: Session = Depends(get_db)):
-    return db.execute(select(Role)).scalars().all()
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    _=Depends(require_superuser),
+):
+    u = crud_users.get_by_id(db, user_id)
+    if not u:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    crud_users.delete_user(db, u)
+    return
